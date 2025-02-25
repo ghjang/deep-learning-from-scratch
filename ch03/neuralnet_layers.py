@@ -91,7 +91,13 @@ class NeuralLayers:
         pixel_values=None,
         opacity_range=(0.1, 0.8),
     ):
-        """레이어 간 연결선 생성"""
+        """
+        레이어 간 연결선 생성
+
+        TDDO:
+        - 2개 계층간 연결선을 현재 모두 1번의 FadeIn으로 표현하고 있는 것을 '불투명도' 단계별로 나누어 표현
+        ; 1번에 그려지기에 시각화가 재미가 없음. 낮은 투명도의 것을 먼저 그리고 점점 높은 투명도로 그려지게 하면 좋을 듯.
+        """
         connections = VGroup()
         w_min, w_max = weights.min(), weights.max()
 

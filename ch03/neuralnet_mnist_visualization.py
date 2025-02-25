@@ -69,15 +69,15 @@ class NeuralNetMNISTVisualization(Scene):
 
     def construct(self):
         # 섹션 1: 28x28 이미지 표시
-        self.next_section("Display MNIST Image with Grid", skip_animations=True)
+        self.next_section("Display MNIST Image with Grid", skip_animations=False)
         self._display_mnist_image_with_grid()
 
         # 섹션 2: 784x1 수평 변환
-        self.next_section("Flatten MNIST Image to 784x1", skip_animations=True)
+        self.next_section("Flatten MNIST Image to 784x1", skip_animations=False)
         horizontal_image, grid_group = self._display_horizontal_mnist_image()
 
         # 섹션 3: 이미지 재배치
-        self.next_section("Rearrange Images", skip_animations=True)
+        self.next_section("Rearrange Images", skip_animations=False)
         self._rearrange_images(horizontal_image, grid_group)
 
         # 섹션 4: 뉴런 계층 표시
@@ -497,7 +497,7 @@ class NeuralNetMNISTVisualization(Scene):
         start_positions = []
         width = self.second_layer_radius * 2  # 직사각형 너비
         height = width * 3  # 직사각형 높이
-        
+
         for rect in second_layer:
             center = rect.get_center()
             bottom_point = center + DOWN * (height / 2)
