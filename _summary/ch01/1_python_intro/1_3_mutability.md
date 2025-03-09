@@ -71,6 +71,46 @@
   1. 스레드 안전성: 여러 스레드가 동일한 객체에 접근해도 값이 변하지 않음
   2. 예측 가능성: 코드의 다른 부분에서 객체를 변경하지 않을 것이라는 보장
   3. 해시 가능: 딕셔너리 키나 집합의 요소로 사용 가능
+  4. 성능상 이점: 불변 객체(예: 튜플)는 몇 가지 성능 최적화가 가능함
+  
+     ```python
+     # 성능 비교 예시
+     import time
+     import sys
+     
+     # 메모리 사용량 비교
+     tuple_ex = (1, 2, 3, 4, 5)
+     list_ex = [1, 2, 3, 4, 5]
+     
+     print(f"튜플 메모리: {sys.getsizeof(tuple_ex)} 바이트")  # 일반적으로 더 작음
+     print(f"리스트 메모리: {sys.getsizeof(list_ex)} 바이트") # 크기 조정을 위한 추가 공간 필요
+     
+     # 생성 속도 비교
+     def compare_creation_speed(n=1000000):
+         # 튜플 생성 시간
+         start = time.time()
+         for _ in range(n):
+             t = (1, 2, 3, 4, 5)
+         tuple_time = time.time() - start
+         
+         # 리스트 생성 시간
+         start = time.time()
+         for _ in range(n):
+             l = [1, 2, 3, 4, 5]
+         list_time = time.time() - start
+         
+         return tuple_time, list_time
+     
+     t_time, l_time = compare_creation_speed()
+     print(f"튜플 생성 시간: {t_time:.5f}초")    # 일반적으로 더 빠름
+     print(f"리스트 생성 시간: {l_time:.5f}초")
+     ```
+
+     불변 객체의 성능상 이점:
+     * 더 작은 메모리 사용량: 크기가 고정되어 동적 크기 조정을 위한 여분의 공간이 필요 없음
+     * 더 빠른 생성: 일반적으로 튜플 생성이 리스트 생성보다 빠름
+     * 인터프리터 최적화: 파이썬은 불변 객체에 대해 특별한 최적화를 수행 가능
+     * 캐싱: 자주 사용되는 불변 객체(작은 정수, 짧은 문자열 등)는 메모리에 캐싱되어 재사용됨
   
 * __가변성(mutability)의 장점__
 
