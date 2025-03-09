@@ -9,8 +9,8 @@
 - [1.5 None과 문법적 특이사항](./ch01/1_python_intro/1_5_none_and_syntax.md)
 - [1.6 파이썬 내장 전역 함수](./ch01/1_python_intro/1_6_builtin_functions.md)
 
-## 2. 데이터 과학 및 딥러닝 라이브러리
+## 2. 데이터 과학 관련 모듈
 
-- [2.1 데이터 분석 라이브러리 (NumPy, Pandas, SciPy, Matplotlib)](./ch01/2_modules_related_to_ds.md#21-데이터-분석-라이브러리-개요)
-- [2.2 머신러닝 라이브러리 (scikit-learn)](./ch01/2_modules_related_to_ds.md#22-머신러닝-라이브러리-개요)
-- [2.3 딥러닝 라이브러리 (TensorFlow, Keras, PyTorch 등)](./ch01/2_modules_related_to_ds.md#23-딥러닝-라이브러리-개요)
+- [2.1 데이터 분석 라이브러리 (NumPy, Pandas, SciPy, Matplotlib)](./ch01/2_modules_related_to_ds/2_1_data_analysis_libraries.md)
+- [2.2 머신러닝 라이브러리 (scikit-learn)](./ch01/2_modules_related_to_ds/2_2_machine_learning_libraries.md)
+- [2.3 딥러닝 라이브러리 (TensorFlow, Keras, PyTorch 등)](./ch01/2_modules_related_to_ds/2_3_deep_learning_libraries.md)
