@@ -1,4 +1,4 @@
-# 1. 파인썬 인트로
+# 1. 파이썬 인트로
 
 '1장 헬로 파이썬'을 읽고 기억해야할만 한 내용들을 정리한다.
 
@@ -8,7 +8,7 @@ __파이썬 '3' 버전은 '2' 버전과 호환되지 않는다.__ 즉 '하위 �
 
 * __'/' 연산자를 이용한 나눗셈의 결과가 '타입'이 달라졌다.__
 
-  '2' 버전에서는 '정수 나누기 정수'의 결과가 '정수'로 나오지만, '3' 버전에서는 '실수'로 나온다. 예를 들어서 '2' 버전에서 '7 / 5'는 '1'이지만, '3' 버전에서는 '1.4'이다.
+  '2' 버전에서는 '정수 나누기 정수'의 결과가 '정수'로 나오지만, '3' 버전에서는 '실수'로 나온다. 예를 들어서 '2' 버전에서 '7 / 5'는 '1'이지만, '3' 버전에서는 '1.4'이다. 또한 '3' 버전에서 '정수 / 정수'의 결과가 '정수'이어도 결과 타입이 '실수'로 바뀌었다.
 
 * __'int' 기본 타입의 숫자 표현 범위가 무한대로 바뀌었다.__
 
@@ -148,6 +148,83 @@ __파이썬 '3' 버전은 '2' 버전과 호환되지 않는다.__ 즉 '하위 �
     print(format(x, '.17f'))  # 0.30000000000000004
     ```
 
+* __'튜플'은 '괄호'로 감싸서 표현할 수 있다.__
+
+  예를 들어 'a = (1, 2, 3)'은 'a'라는 '튜플'에 '1, 2, 3'을 저장한다:
+
+    ```python
+    a = (1, 2, 3)
+    print(a)    # 출력: (1, 2, 3)
+    ```
+
+    '튜플'은 '리스트'와 비슷하지만 '불변(immutable)'이다. 즉, 한번 생성된 튜플의 요소는 변경할 수 없다:
+
+    ```python
+    a = (1, 2, 3)
+    # a[0] = 5    # 오류 발생: 'tuple' object does not support item assignment
+    ```
+
+    튜플의 원소에 접근하는 방식은 리스트와 동일하게 '대괄호'와 '인덱스'를 사용한다:
+
+    ```python
+    a = (1, 2, 3, 4, 5)
+    print(a[0])     # 출력: 1
+    print(a[2])     # 출력: 3
+    print(a[-1])    # 출력: 5 (음수 인덱스는 끝에서부터 접근)
+    ```
+
+    하지만 튜플의 요소가 가변(mutable) 객체라면 그 객체 자체는 변경할 수 있다:
+
+    ```python
+    a = ([1, 2], 3)
+    a[0].append(3)    # 튜플 내부의 리스트는 변경 가능
+    print(a)    # 출력: ([1, 2, 3], 3)
+    ```
+
+    튜플은 항목이 하나만 있을 때 콤마를 꼭 붙여야 한다:
+
+    ```python
+    a = (1,)    # 이것은 튜플입니다
+    b = (1)     # 이것은 정수입니다
+    print(type(a))    # 출력: <class 'tuple'>
+    print(type(b))    # 출력: <class 'int'>
+    ```
+
+    튜플은 '패킹'과 '언패킹'을 통해 다중 할당이 가능하다:
+
+    ```python
+    # 패킹
+    coordinates = (10, 20)
+    
+    # 언패킹
+    x, y = coordinates
+    print(x)    # 출력: 10
+    print(y)    # 출력: 20
+    
+    # 다중 할당
+    a, b = 1, 2
+    print(a, b)    # 출력: 1 2
+    
+    # 값 교환
+    a, b = b, a
+    print(a, b)    # 출력: 2 1
+    ```
+
+    리스트와 마찬가지로 튜플도 타입 힌트를 사용할 수 있다:
+
+    ```python
+    # 이전 방식 (3.9 이전)
+    from typing import Tuple
+    def get_coordinates() -> Tuple[int, int]:
+        return (10, 20)
+    ```
+
+    ```python
+    # 새로운 방식 (3.9+ 권장)
+    def get_coordinates() -> tuple[int, int]:
+        return (10, 20)
+    ```
+
 * __'리스트'는 '대괄호'로 감싸서 표현할 수 있다.__
 
   예를 들어 'a = [1, 2, 3]'은 'a'라는 '리스트'에 '1, 2, 3'을 저장한다:
@@ -215,6 +292,8 @@ __파이썬 '3' 버전은 '2' 버전과 호환되지 않는다.__ 즉 '하위 �
   예를 들어:
 
     ```python
+    from typing import Any  # Any, TypeVar 등의 특수 타입은 여전히 typing 모듈에서 import 필요
+    
     scores: dict[str, int] = {"math": 90, "english": 85}    # 키는 문자열, 값은 정수
     mixed: dict[str, Any] = {"name": "Bob", "age": 20}      # 키는 문자열, 값은 아무 타입
     nested: dict[str, dict[str, int]] = {                   # 중첩된 딕셔너리
@@ -265,6 +344,262 @@ __파이썬 '3' 버전은 '2' 버전과 호환되지 않는다.__ 즉 '하위 �
     ```
 
 ## 1.3 파이썬 특이 기본 문법
+
+### 1.3.1 가변(Mutable)과 불변(Immutable) 타입
+
+* __파이썬의 데이터 타입은 '가변(mutable)'과 '불변(immutable)'으로 나뉜다.__
+
+  이 구분은 객체가 생성된 후 그 내용을 변경할 수 있는지 여부를 결정한다:
+
+  * 불변(Immutable) 타입: 한번 생성되면 내용을 변경할 수 없는 객체
+    * int, float, bool, str, tuple, frozenset, bytes
+  
+  * 가변(Mutable) 타입: 내용을 자유롭게 변경할 수 있는 객체
+    * list, dict, set, bytearray, 사용자 정의 클래스
+  
+  불변 객체는 내용을 변경하는 연산을 수행하면 새로운 객체가 생성된다:
+
+  ```python
+  # 문자열(불변 객체) 연산
+  s = "hello"
+  id_before = id(s)  # 객체의 메모리 주소
+  
+  s = s + " world"   # 새로운 객체 생성
+  id_after = id(s)
+  
+  print(id_before == id_after)  # False - 다른 객체임
+  ```
+
+  반면 가변 객체는 내용 변경 시 같은 객체를 유지한다:
+
+  ```python
+  # 리스트(가변 객체) 연산
+  lst = [1, 2, 3]
+  id_before = id(lst)
+  
+  lst.append(4)  # 같은 객체의 내용 수정
+  id_after = id(lst)
+  
+  print(id_before == id_after)  # True - 동일한 객체임
+  ```
+
+* __가변성이 함수 호출과 변수 할당에 미치는 영향__
+
+  불변 객체는 함수에 전달되거나 다른 변수에 할당될 때 전체가 복사된다(값 전달):
+  
+  ```python
+  def modify_value(x):
+      x = x + 1  # 새 객체 생성
+      return x
+  
+  num = 10
+  result = modify_value(num)
+  print(num)     # 10 (원본 변경 없음)
+  print(result)  # 11
+  ```
+  
+  가변 객체는 함수에 전달되거나 다른 변수에 할당될 때 참조가 전달된다(참조 전달):
+  
+  ```python
+  def modify_list(lst):
+      lst.append(4)  # 원본 객체 수정
+  
+  numbers = [1, 2, 3]
+  modify_list(numbers)
+  print(numbers)  # [1, 2, 3, 4] (원본이 변경됨)
+  ```
+
+* __불변성(immutability)의 장점__
+
+  1. 스레드 안전성: 여러 스레드가 동일한 객체에 접근해도 값이 변하지 않음
+  2. 예측 가능성: 코드의 다른 부분에서 객체를 변경하지 않을 것이라는 보장
+  3. 해시 가능: 딕셔너리 키나 집합의 요소로 사용 가능
+  
+* __가변성(mutability)의 장점__
+
+  1. 효율성: 큰 데이터의 일부만 수정할 때 전체를 복사할 필요 없음
+  2. 메모리 효율: 수정이 필요할 때마다 새 객체를 생성하지 않음
+  3. 알고리즘 구현: 특정 알고리즘(정렬, 검색 등)을 더 직관적으로 구현 가능
+
+### 1.3.2 시퀀스 타입과 슬라이싱
+
+* __파이썬의 '시퀀스 타입'은 순서가 있는 데이터 컬렉션이다.__
+
+  파이썬에는 다음과 같은 주요 시퀀스 타입들이 있다:
+  
+  * 문자열(str): 문자들의 시퀀스
+  * 리스트(list): 변경 가능한(mutable) 객체들의 시퀀스
+  * 튜플(tuple): 변경 불가능한(immutable) 객체들의 시퀀스
+  * 범위(range): 정수 시퀀스(연속적인 숫자들)
+  * 바이트(bytes): 바이트의 불변 시퀀스
+  * 바이트배열(bytearray): 바이트의 가변 시퀀스
+  
+  모든 시퀀스 타입은 다음과 같은 공통 특징을 가진다:
+  
+  * 인덱싱을 통한 접근 가능 (0부터 시작)
+  * 슬라이싱 연산 지원
+  * len() 함수를 통한 길이 확인 가능
+  * 반복문(for)에서 순회 가능
+  * * 연산자(concatenation)와 * 연산자(repetition) 지원
+  * in 연산자를 통한 포함 여부 확인
+
+* __'슬라이싱'은 시퀀스의 일부분을 추출하는 강력한 기능이다.__
+
+  모든 시퀀스 타입에서 공통적으로 사용할 수 있는 슬라이싱 문법은 다음과 같다:
+
+  ```python
+  sequence[start:stop:step]
+  ```
+
+  각 매개변수의 의미:
+  * start: 시작 인덱스 (포함)
+  * stop: 종료 인덱스 (미포함)
+  * step: 인덱스 증가량
+
+  슬라이싱의 주요 특징:
+  
+  ```python
+  # 기본 슬라이싱 [시작:끝]
+  a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  print(a[2:5])     # 출력: [2, 3, 4] (인덱스 2부터 5 전까지)
+  
+  # 시작 인덱스 생략 (처음부터)
+  print(a[:5])      # 출력: [0, 1, 2, 3, 4]
+  
+  # 끝 인덱스 생략 (끝까지)
+  print(a[5:])      # 출력: [5, 6, 7, 8, 9]
+  
+  # 스텝 사용 [시작:끝:스텝]
+  print(a[1:9:2])   # 출력: [1, 3, 5, 7] (1부터 9 전까지 2 간격으로)
+  
+  # 음수 인덱스 사용
+  print(a[-5:-2])   # 출력: [5, 6, 7] (끝에서 5번째부터 끝에서 2번째 전까지)
+  
+  # 전체 복사
+  b = a[:]          # 리스트의 얕은 복사(shallow copy)
+  
+  # 리스트 뒤집기
+  print(a[::-1])    # 출력: [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+  ```
+
+* __다양한 시퀀스 타입에 적용되는 슬라이싱:__
+
+  ```python
+  # 문자열 슬라이싱
+  s = "Hello Python"
+  print(s[6:])      # 출력: "Python"
+  print(s[:5])      # 출력: "Hello"
+  print(s[::-1])    # 출력: "nohtyP olleH"
+  
+  # 튜플 슬라이싱
+  t = (0, 1, 2, 3, 4, 5)
+  print(t[1:5:2])   # 출력: (1, 3)
+  
+  # range 객체의 슬라이싱 (결과는 다시 range 객체가 됨)
+  r = range(10)
+  print(list(r[2:8:2]))  # 출력: [2, 4, 6]
+  ```
+
+* __슬라이싱은 원본 변경 없이 새로운 객체를 반환한다.__
+
+  원본 시퀀스는 변경되지 않고, 슬라이싱 결과로 원본과 동일한 타입의 새 객체가 생성된다.
+  단, 얕은 복사(shallow copy)이므로 리스트나 튜플의 요소가 가변 객체인 경우 요소 자체는 공유된다.
+  
+  '얕은 복사(shallow copy)'란 최상위 컨테이너는 새로 생성하지만, 내부 요소는 원본 객체와 동일한 참조를 가리키는 것을 말한다:
+  
+  ```python
+  # 얕은 복사 예시
+  original = [1, 2, [3, 4]]
+  shallow_copy = original[:]  # 슬라이싱으로 얕은 복사
+  
+  # 최상위 컨테이너는 다른 객체다
+  print(original is shallow_copy)  # False
+  
+  # 내부 요소 변경 시 영향 관계 확인
+  shallow_copy[0] = 99  # 불변 객체 변경
+  print(original)       # [1, 2, [3, 4]] - 원본에 영향 없음
+  
+  shallow_copy[2][0] = 33  # 가변 객체(내부 리스트)의 요소 변경
+  print(original)          # [1, 2, [33, 4]] - 원본도 함께 변경됨
+  ```
+  
+  반면 '깊은 복사(deep copy)'는 객체 내부의 모든 요소까지 재귀적으로 복사하는 것을 의미하며, 이를 위해서는 `copy` 모듈의 `deepcopy` 함수를 사용한다:
+  
+  ```python
+  import copy
+  
+  original = [1, 2, [3, 4]]
+  deep_copy = copy.deepcopy(original)
+  
+  deep_copy[2][0] = 33  # 가변 객체(내부 리스트)의 요소 변경
+  print(original)       # [1, 2, [3, 4]] - 원본에 영향 없음
+  print(deep_copy)      # [1, 2, [33, 4]]
+  ```
+
+* __시퀀스 타입과 이터러블(Iterable)의 관계__
+
+  파이썬에서 시퀀스 타입은 모두 '이터러블(Iterable)'의 특성을 가진다. 이터러블이란 하나씩 차례대로 꺼내어 쓸 수 있는 객체를 의미한다. 시퀀스 타입 외에도 여러 이터러블이 존재한다:
+  
+  * 시퀀스 타입 - 리스트, 튜플, 문자열, range 등
+  * 집합 타입 - set, frozenset
+  * 사전 타입 - dict
+  * 제너레이터(generator)
+  * 파일 객체
+  * 사용자 정의 이터러블(`__iter__()` 메서드를 구현한 객체)
+  
+  이터러블의 핵심 특징:
+  
+  1. `for` 루프에서 순회 가능:
+
+     ```python
+     # 여러 이터러블을 순회하는 예
+     for item in [1, 2, 3]:  # 리스트
+         print(item)
+     
+     for char in "Python":   # 문자열
+         print(char)
+     
+     for key in {"a": 1, "b": 2}:  # 딕셔너리(키가 순회됨)
+         print(key)
+     ```
+  
+  2. 반복자(Iterator) 생성 가능:
+
+     ```python
+     # 이터러블로부터 반복자 생성
+     my_list = [1, 2, 3]
+     iterator = iter(my_list)  # __iter__() 메서드 호출
+     
+     # 반복자에서 값 가져오기
+     print(next(iterator))  # 1
+     print(next(iterator))  # 2
+     print(next(iterator))  # 3
+     # print(next(iterator))  # StopIteration 예외 발생
+     ```
+  
+  3. 컴프리헨션(comprehension)과 함께 사용 가능:
+
+     ```python
+     # 리스트 컴프리헨션
+     squares = [x**2 for x in range(5)]
+     print(squares)  # [0, 1, 4, 9, 16]
+     
+     # 딕셔너리 컴프리헨션
+     word = "hello"
+     char_positions = {char: idx for idx, char in enumerate(word)}
+     print(char_positions)  # {'h': 0, 'e': 1, 'l': 3, 'o': 4}
+     ```
+  
+  4. 내장 함수와 함께 사용 가능:
+
+     ```python
+     print(sum([1, 2, 3, 4]))  # 10
+     print(max("python"))      # 'y'
+     print(min({5, 3, 8, 1}))  # 1
+     print(sorted("hello"))    # ['e', 'h', 'l', 'l', 'o']
+     ```
+
+### 1.3.3 객체 지향 특성
 
 * __파이썬에서 모든 표현 대상은 '객체'이다.__
 
@@ -325,6 +660,8 @@ __파이썬 '3' 버전은 '2' 버전과 호환되지 않는다.__ 즉 '하위 �
   * `__hash__()`: 해시 값 계산 (딕셔너리 키로 사용 가능한지 결정)
   * `__eq__()`: 동등성 비교 (== 연산자)
 
+### 1.3.4 특수 연산자
+
 * __'**' 연산자는 '거듭제곱'을 나타낸다.__
 
   예를 들어 '2 ** 3'은 '2의 3제곱'을 의미한다.
@@ -332,6 +669,164 @@ __파이썬 '3' 버전은 '2' 버전과 호환되지 않는다.__ 즉 '하위 �
 * __'//' 연산자는 '나눗셈의 몫'을 나타낸다.__
 
   예를 들어 '7 // 5'는 '7을 5로 나눈 몫'을 의미한다.
+
+* __'is' 연산자는 '객체 식별자 비교'를 수행한다.__
+
+  'is' 연산자는 두 변수가 메모리상에서 동일한 객체를 참조하는지 비교한다.
+  
+  * '==' 연산자: 논리적 동등성(logical equality) 비교 - 두 객체의 값이 같은지 비교
+  * 'is' 연산자: 물리적 동일성(physical identity) 비교 - 두 변수가 실제로 메모리 상 같은 객체를 가리키는지 비교
+
+  이는 id() 함수가 반환하는 객체의 고유 식별자(메모리 주소)가 동일한지 비교하는 것과 같다:
+
+  ```python
+  # == 연산자 vs is 연산자
+  a = [1, 2, 3]
+  b = [1, 2, 3]
+  c = a
+  
+  print(a == b)  # True (값이 동등함 - 내용이 같음)
+  print(a is b)  # False (다른 객체 - 다른 메모리 주소)
+  print(a is c)  # True (같은 객체를 참조 - 동일한 메모리 주소)
+  
+  # id() 함수로 객체 메모리 주소 확인
+  print(id(a))   # 예: 140233683913024
+  print(id(b))   # 예: 140233683913344 (다름)
+  print(id(c))   # 예: 140233683913024 (a와 동일)
+  
+  # == 연산자는 값의 비교를 위해 __eq__ 메서드를 호출
+  # is 연산자는 메모리 참조 비교로 더 빠르게 동작
+  ```
+
+  특히 None 값과의 비교는 항상 'is' 연산자를 사용해야 한다:
+
+  ```python
+  value = None
+  
+  # 권장 방식
+  if value is None:
+      print("값이 None입니다")
+  
+  # 권장하지 않음
+  if value == None:
+      print("== 연산자로 비교")
+  ```
+
+  파이썬에서는 일부 작은 정수와 같은 불변 객체들이 최적화를 위해 같은 객체로 관리되기도 한다:
+
+  ```python
+  # 작은 정수는 같은 객체로 관리됨 (-5부터 256까지)
+  x = 5
+  y = 5
+  print(x is y)  # True (동일한 객체)
+  
+  # 큰 정수는 별도 객체로 관리됨
+  large_x = 1000
+  large_y = 1000
+  print(large_x is large_y)  # 구현에 따라 다를 수 있음
+  ```
+
+  항상 값 비교에는 '==' 연산자를, 객체 동일성 비교에는 'is' 연산자를 사용하는 것이 권장된다.
+
+### 1.3.5 None과 NoneType
+
+* __'None'은 파이썬에서 '값이 없음'을 나타내는 특별한 객체이다.__
+
+  None은 파이썬의 싱글톤(singleton) 객체로, 시스템 전체에 단 하나만 존재한다. 값의 부재, 초기화되지 않은 변수, 또는 함수에서 명시적인 반환값이 없을 때 사용된다.
+  
+  None의 주요 특징:
+  
+  1. NoneType이라는 고유한 타입을 가진다:
+  
+     ```python
+     print(type(None))  # <class 'NoneType'>
+     ```
+  
+  2. 메모리에 하나만 존재하는 싱글톤 객체이다:
+  
+     ```python
+     a = None
+     b = None
+     print(a is b)  # True - 항상 같은 객체를 참조
+     ```
+  
+  3. 불리언 컨텍스트에서 False로 평가된다:
+  
+     ```python
+     print(bool(None))  # False
+     
+     if None:
+         print("실행되지 않음")
+     else:
+         print("None은 False로 평가됨")
+     ```
+  
+  4. 기본 반환값으로 사용된다:
+  
+     ```python
+     def func_without_return():
+         pass
+         
+     result = func_without_return()
+     print(result)  # None
+     print(result is None)  # True
+     ```
+  
+  5. 변수나 객체의 초기화에 사용된다:
+  
+     ```python
+     # 객체가 아직 존재하지 않음을 나타내기
+     user = None
+     
+     # 나중에 초기화
+     if condition:
+         user = User("John")
+     ```
+  
+  6. Optional 타입과 함께 자주 사용된다:
+  
+     ```python
+     # 3.9 이전
+     from typing import Optional
+     
+     def get_user(user_id: int) -> Optional[User]:
+         if user_exists(user_id):
+             return User(user_id)
+         return None
+         
+     # 3.9 이후
+     def get_user(user_id: int) -> User | None:
+         if user_exists(user_id):
+             return User(user_id)
+         return None
+     ```
+  
+  None은 '빈 값'을 나타내는 다른 객체들(빈 문자열 "", 빈 리스트 [], 숫자 0)과는 다르다. None은 값 자체가 없음을 의미한다:
+  
+  ```python
+  empty_str = ""
+  empty_list = []
+  zero = 0
+  none_value = None
+  
+  print(empty_str == None)  # False
+  print(empty_list == None)  # False
+  print(zero == None)  # False
+  print(none_value is None)  # True
+  ```
+  
+  None 값을 비교할 때는 항상 'is' 연산자를 사용해야 한다:
+  
+  ```python
+  # 권장 방식
+  if value is None:
+      print("값이 None입니다")
+  
+  if value is not None:
+      print("값이 None이 아닙니다")
+  ```
+
+### 1.3.6 문법적 특이사항
 
 * __'...'은 'pass'를 의미한다.__
 
@@ -353,6 +848,10 @@ __파이썬 '3' 버전은 '2' 버전과 호환되지 않는다.__ 즉 '하위 �
 * __'isinstance()' 함수를 이용해서 주어진 '객체'가 '특정 타입'인지 확인할 수 있다.__
 
   예를 들어 'isinstance(10, int)'는 'True'를 반환한다.
+
+* __'id()' 함수를 이용해서 '객체'의 '메모리 주소'를 알 수 있다.__
+
+  예를 들어 'id(10)'은 '객체 10'의 '메모리 주소'를 반환한다.
 
 * __'dir()' 함수를 이용해서 '객체'의 '속성'과 '메서드'를 알 수 있다.__
 
@@ -381,6 +880,8 @@ __파이썬 '3' 버전은 '2' 버전과 호환되지 않는다.__ 즉 '하위 �
      * 객체의 `__str__()` 메서드 호출
 
      ```python
+     from datetime import datetime
+     
      date = datetime.now()
      print(str(date))  # 2024-01-20 15:30:00
      ```
