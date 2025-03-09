@@ -1,6 +1,6 @@
 # 1.4 시퀀스 타입과 슬라이싱
 
-> [목차로 돌아가기](../../README.md) | [이전: 가변(Mutable)과 불변(Immutable) 타입](./1_3_mutability.md) | [다음: 객체 지향 특성과 특수 연산자](./1_5_oop_and_operators.md)
+> [목차로 돌아가기](../../README.md) | [이전: 가변(Mutable)과 불변(Immutable) 타입](./1_3_mutability.md) | [다음: 객체 지향 특성](./1_5_oop.md)
 
 ## 1.4.1 시퀀스 타입
 
@@ -182,4 +182,4 @@
   print(deep_copy)      # [1, 2, [33, 4]]
   ```
 
-> [목차로 돌아가기](../../README.md) | [이전: 가변(Mutable)과 불변(Immutable) 타입](./1_3_mutability.md) | [다음: 객체 지향 특성과 특수 연산자](./1_5_oop_and_operators.md)
+> [목차로 돌아가기](../../README.md) | [이전: 가변(Mutable)과 불변(Immutable) 타입](./1_3_mutability.md) | [다음: 객체 지향 특성](./1_5_oop.md)

@@ -1,6 +1,6 @@
 # 1.4 객체 지향 특성
 
-> [목차로 돌아가기](../../README.md) | [이전: 시퀀스 타입과 슬라이싱](./1_3_sequence_types.md) | [다음: None과 문법적 특이사항](./1_5_none_and_syntax.md)
+> [목차로 돌아가기](../../README.md) | [이전: 시퀀스 타입과 슬라이싱](./1_4_sequence_types.md) | [다음: None과 문법적 특이사항](./1_6_none_and_syntax.md)
 
 ## 1.4.1 객체 지향 특성
 
@@ -63,4 +63,4 @@
   * `__hash__()`: 해시 값 계산 (딕셔너리 키로 사용 가능한지 결정)
   * `__eq__()`: 동등성 비교 (== 연산자)
 
-> [목차로 돌아가기](../../README.md) | [이전: 시퀀스 타입과 슬라이싱](./1_3_sequence_types.md) | [다음: None과 문법적 특이사항](./1_5_none_and_syntax.md)
+> [목차로 돌아가기](../../README.md) | [이전: 시퀀스 타입과 슬라이싱](./1_4_sequence_types.md) | [다음: None과 문법적 특이사항](./1_6_none_and_syntax.md)
