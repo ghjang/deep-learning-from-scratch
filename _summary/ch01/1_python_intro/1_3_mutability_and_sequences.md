@@ -78,7 +78,7 @@
   2. 메모리 효율: 수정이 필요할 때마다 새 객체를 생성하지 않음
   3. 알고리즘 구현: 특정 알고리즘(정렬, 검색 등)을 더 직관적으로 구현 가능
 
-## 1.3.2 시퀀스 타입과 슬라이싱
+## 1.3.2 시퀀스 타입
 
 * __파이썬의 '시퀀스 타입'은 순서가 있는 데이터 컬렉션이다.__
 
@@ -97,8 +97,73 @@
   * 슬라이싱 연산 지원
   * len() 함수를 통한 길이 확인 가능
   * 반복문(for)에서 순회 가능
-  * * 연산자(concatenation)와 * 연산자(repetition) 지원
+  * \+ 연산자(concatenation)와 * 연산자(repetition) 지원
   * in 연산자를 통한 포함 여부 확인
+
+* __시퀀스 타입과 이터러블(Iterable)의 관계__
+
+  파이썬에서 시퀀스 타입은 모두 '이터러블(Iterable)'의 특성을 가진다. 이터러블이란 하나씩 차례대로 꺼내어 쓸 수 있는 객체를 의미한다. 시퀀스 타입 외에도 여러 이터러블이 존재한다:
+  
+  * 시퀀스 타입 - 리스트, 튜플, 문자열, range 등
+  * 집합 타입 - set, frozenset
+  * 사전 타입 - dict
+  * 제너레이터(generator)
+  * 파일 객체
+  * 사용자 정의 이터러블(`__iter__()` 메서드를 구현한 객체)
+  
+  이터러블의 핵심 특징:
+  
+  1. `for` 루프에서 순회 가능:
+
+     ```python
+     # 여러 이터러블을 순회하는 예
+     for item in [1, 2, 3]:  # 리스트
+         print(item)
+     
+     for char in "Python":   # 문자열
+         print(char)
+     
+     for key in {"a": 1, "b": 2}:  # 딕셔너리(키가 순회됨)
+         print(key)
+     ```
+  
+  2. 반복자(Iterator) 생성 가능:
+
+     ```python
+     # 이터러블로부터 반복자 생성
+     my_list = [1, 2, 3]
+     iterator = iter(my_list)  # __iter__() 메서드 호출
+     
+     # 반복자에서 값 가져오기
+     print(next(iterator))  # 1
+     print(next(iterator))  # 2
+     print(next(iterator))  # 3
+     # print(next(iterator))  # StopIteration 예외 발생
+     ```
+  
+  3. 컴프리헨션(comprehension)과 함께 사용 가능:
+
+     ```python
+     # 리스트 컴프리헨션
+     squares = [x**2 for x in range(5)]
+     print(squares)  # [0, 1, 4, 9, 16]
+     
+     # 딕셔너리 컴프리헨션
+     word = "hello"
+     char_positions = {char: idx for idx, char in enumerate(word)}
+     print(char_positions)  # {'h': 0, 'e': 1, 'l': 3, 'o': 4}
+     ```
+  
+  4. 내장 함수와 함께 사용 가능:
+
+     ```python
+     print(sum([1, 2, 3, 4]))  # 10
+     print(max("python"))      # 'y'
+     print(min({5, 3, 8, 1}))  # 1
+     print(sorted("hello"))    # ['e', 'h', 'l', 'l', 'o']
+     ```
+
+## 1.3.3 슬라이싱
 
 * __'슬라이싱'은 시퀀스의 일부분을 추출하는 강력한 기능이다.__
 
@@ -192,68 +257,5 @@
   print(original)       # [1, 2, [3, 4]] - 원본에 영향 없음
   print(deep_copy)      # [1, 2, [33, 4]]
   ```
-
-* __시퀀스 타입과 이터러블(Iterable)의 관계__
-
-  파이썬에서 시퀀스 타입은 모두 '이터러블(Iterable)'의 특성을 가진다. 이터러블이란 하나씩 차례대로 꺼내어 쓸 수 있는 객체를 의미한다. 시퀀스 타입 외에도 여러 이터러블이 존재한다:
-  
-  * 시퀀스 타입 - 리스트, 튜플, 문자열, range 등
-  * 집합 타입 - set, frozenset
-  * 사전 타입 - dict
-  * 제너레이터(generator)
-  * 파일 객체
-  * 사용자 정의 이터러블(`__iter__()` 메서드를 구현한 객체)
-  
-  이터러블의 핵심 특징:
-  
-  1. `for` 루프에서 순회 가능:
-
-     ```python
-     # 여러 이터러블을 순회하는 예
-     for item in [1, 2, 3]:  # 리스트
-         print(item)
-     
-     for char in "Python":   # 문자열
-         print(char)
-     
-     for key in {"a": 1, "b": 2}:  # 딕셔너리(키가 순회됨)
-         print(key)
-     ```
-  
-  2. 반복자(Iterator) 생성 가능:
-
-     ```python
-     # 이터러블로부터 반복자 생성
-     my_list = [1, 2, 3]
-     iterator = iter(my_list)  # __iter__() 메서드 호출
-     
-     # 반복자에서 값 가져오기
-     print(next(iterator))  # 1
-     print(next(iterator))  # 2
-     print(next(iterator))  # 3
-     # print(next(iterator))  # StopIteration 예외 발생
-     ```
-  
-  3. 컴프리헨션(comprehension)과 함께 사용 가능:
-
-     ```python
-     # 리스트 컴프리헨션
-     squares = [x**2 for x in range(5)]
-     print(squares)  # [0, 1, 4, 9, 16]
-     
-     # 딕셔너리 컴프리헨션
-     word = "hello"
-     char_positions = {char: idx for idx, char in enumerate(word)}
-     print(char_positions)  # {'h': 0, 'e': 1, 'l': 3, 'o': 4}
-     ```
-  
-  4. 내장 함수와 함께 사용 가능:
-
-     ```python
-     print(sum([1, 2, 3, 4]))  # 10
-     print(max("python"))      # 'y'
-     print(min({5, 3, 8, 1}))  # 1
-     print(sorted("hello"))    # ['e', 'h', 'l', 'l', 'o']
-     ```
 
 > [목차로 돌아가기](../../README.md) | [이전: 파이썬 기본 자료형](./1_2_data_types.md) | [다음: 객체 지향 특성과 특수 연산자](./1_4_oop_and_operators.md)
