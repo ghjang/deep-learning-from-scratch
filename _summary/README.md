@@ -3,7 +3,7 @@
 ## 1. 파이썬 인트로
 
 - [1.1 파이썬 기본](./ch01/1_python_intro/1_1_basic_concepts.md)
-- [1.2 파이썬 기본 자료형](./ch01/1_python_intro/1_2_data_types.md)
+- [1.2 기본 자료형](./ch01/1_python_intro/1_2_data_types.md)
 - [1.3 가변(Mutable)과 불변(Immutable) 타입 및 시퀀스](./ch01/1_python_intro/1_3_mutability_and_sequences.md)
 - [1.4 객체 지향 특성과 특수 연산자](./ch01/1_python_intro/1_4_oop_and_operators.md)
 - [1.5 None과 문법적 특이사항](./ch01/1_python_intro/1_5_none_and_syntax.md)
