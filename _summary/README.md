@@ -2,12 +2,12 @@
 
 ## 1. 파이썬 인트로
 
-- [1.1 파이썬 기본 개념과 주의사항](./ch01/1_1_basic_concepts.md)
-- [1.2 파이썬 기본 자료형](./ch01/1_2_data_types.md)
-- [1.3 가변(Mutable)과 불변(Immutable) 타입 및 시퀀스](./ch01/1_3_mutability_and_sequences.md)
-- [1.4 객체 지향 특성과 특수 연산자](./ch01/1_4_oop_and_operators.md)
-- [1.5 None과 문법적 특이사항](./ch01/1_5_none_and_syntax.md)
-- [1.6 파이썬 내장 전역 함수](./ch01/1_6_builtin_functions.md)
+- [1.1 파이썬 기본 개념과 주의사항](./ch01/1_python_intro/1_1_basic_concepts.md)
+- [1.2 파이썬 기본 자료형](./ch01/1_python_intro/1_2_data_types.md)
+- [1.3 가변(Mutable)과 불변(Immutable) 타입 및 시퀀스](./ch01/1_python_intro/1_3_mutability_and_sequences.md)
+- [1.4 객체 지향 특성과 특수 연산자](./ch01/1_python_intro/1_4_oop_and_operators.md)
+- [1.5 None과 문법적 특이사항](./ch01/1_python_intro/1_5_none_and_syntax.md)
+- [1.6 파이썬 내장 전역 함수](./ch01/1_python_intro/1_6_builtin_functions.md)
 
 ## 2. 데이터 과학 및 딥러닝 라이브러리
 
