@@ -1,6 +1,6 @@
 # 1.3 가변(Mutable)과 불변(Immutable) 타입 및 시퀀스
 
-> [목차로 돌아가기](../README.md) | [이전: 파이썬 기본 자료형](./1_2_data_types.md) | [다음: 객체 지향 특성과 특수 연산자](./1_4_oop_and_operators.md)
+> [목차로 돌아가기](../../README.md) | [이전: 파이썬 기본 자료형](./1_2_data_types.md) | [다음: 객체 지향 특성과 특수 연산자](./1_4_oop_and_operators.md)
 
 ## 1.3.1 가변(Mutable)과 불변(Immutable) 타입
 
@@ -256,4 +256,4 @@
      print(sorted("hello"))    # ['e', 'h', 'l', 'l', 'o']
      ```
 
-> [목차로 돌아가기](../README.md) | [이전: 파이썬 기본 자료형](./1_2_data_types.md) | [다음: 객체 지향 특성과 특수 연산자](./1_4_oop_and_operators.md)
+> [목차로 돌아가기](../../README.md) | [이전: 파이썬 기본 자료형](./1_2_data_types.md) | [다음: 객체 지향 특성과 특수 연산자](./1_4_oop_and_operators.md)

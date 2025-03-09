@@ -1,6 +1,6 @@
 # 1.6 파이썬 내장 전역 함수
 
-> [목차로 돌아가기](../README.md) | [이전: None과 문법적 특이사항](./1_5_none_and_syntax.md)
+> [목차로 돌아가기](../../README.md) | [이전: None과 문법적 특이사항](./1_5_none_and_syntax.md)
 
 ## 1.6.1 타입 관련 함수
 
@@ -333,4 +333,4 @@
 
     파이썬에서는 대신에 앞선 예제에서와 같이 range() 함수를 활용한다.
 
-> [목차로 돌아가기](../README.md) | [이전: None과 문법적 특이사항](./1_5_none_and_syntax.md)
+> [목차로 돌아가기](../../README.md) | [이전: None과 문법적 특이사항](./1_5_none_and_syntax.md)

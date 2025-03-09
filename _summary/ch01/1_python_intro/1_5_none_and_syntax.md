@@ -1,6 +1,6 @@
 # 1.5 None과 문법적 특이사항
 
-> [목차로 돌아가기](../README.md) | [이전: 객체 지향 특성과 특수 연산자](./1_4_oop_and_operators.md) | [다음: 파이썬 내장 전역 함수](./1_6_builtin_functions.md)
+> [목차로 돌아가기](../../README.md) | [이전: 객체 지향 특성과 특수 연산자](./1_4_oop_and_operators.md) | [다음: 파이썬 내장 전역 함수](./1_6_builtin_functions.md)
 
 ## 1.5.1 None과 NoneType
 
@@ -138,4 +138,4 @@
   type JSONValue = str | int | float | bool | None | list[JSONValue] | dict[str, JSONValue]
   ```
 
-> [목차로 돌아가기](../README.md) | [이전: 객체 지향 특성과 특수 연산자](./1_4_oop_and_operators.md) | [다음: 파이썬 내장 전역 함수](./1_6_builtin_functions.md)
+> [목차로 돌아가기](../../README.md) | [이전: 객체 지향 특성과 특수 연산자](./1_4_oop_and_operators.md) | [다음: 파이썬 내장 전역 함수](./1_6_builtin_functions.md)
