@@ -1,6 +1,6 @@
 # 1.4 객체 지향 특성과 특수 연산자
 
-> [목차로 돌아가기](./README.md) | [이전: 가변성과 시퀀스](./1_3_mutability_and_sequences.md) | [다음: None과 문법적 특이사항](./1_5_none_and_syntax.md)
+> [목차로 돌아가기](../README.md) | [이전: 가변성과 시퀀스](./1_3_mutability_and_sequences.md) | [다음: None과 문법적 특이사항](./1_5_none_and_syntax.md)
 
 ## 1.4.1 객체 지향 특성
 
@@ -131,4 +131,4 @@
 
   항상 값 비교에는 '==' 연산자를, 객체 동일성 비교에는 'is' 연산자를 사용하는 것이 권장된다.
 
-> [목차로 돌아가기](./README.md) | [이전: 가변성과 시퀀스](./1_3_mutability_and_sequences.md) | [다음: None과 문법적 특이사항](./1_5_none_and_syntax.md)
+> [목차로 돌아가기](../README.md) | [이전: 가변성과 시퀀스](./1_3_mutability_and_sequences.md) | [다음: None과 문법적 특이사항](./1_5_none_and_syntax.md)

@@ -1,6 +1,6 @@
 # 1.2 파이썬 기본 자료형
 
-> [목차로 돌아가기](./README.md) | [이전: 기본 개념과 주의사항](./1_1_basic_concepts.md) | [다음: 가변성과 시퀀스](./1_3_mutability_and_sequences.md)
+> [목차로 돌아가기](../README.md) | [이전: 기본 개념과 주의사항](./1_1_basic_concepts.md) | [다음: 가변성과 시퀀스](./1_3_mutability_and_sequences.md)
 
 ## 문자열 (str)
 
@@ -273,4 +273,4 @@
         print(f"{subject}: {score}")
     ```
 
-> [목차로 돌아가기](./README.md) | [이전: 기본 개념과 주의사항](./1_1_basic_concepts.md) | [다음: 가변성과 시퀀스](./1_3_mutability_and_sequences.md)
+> [목차로 돌아가기](../README.md) | [이전: 기본 개념과 주의사항](./1_1_basic_concepts.md) | [다음: 가변성과 시퀀스](./1_3_mutability_and_sequences.md)
