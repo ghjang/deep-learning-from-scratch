@@ -32,7 +32,62 @@ from typing import Tuple
 Vector = Tuple[int, ...]  # 가변 길이 튜플
 ```
 
-## 1.5.2 타입 힌트에서 타입과 값의 구분
+## 1.5.2 기본 타입 힌트 패턴
+
+### a. None과 Optional의 관계
+
+`None`은 값이지만 타입 힌트 맥락에서는 특별한 의미를 갖는다:
+
+```python
+from typing import Optional
+
+# 아래 두 함수 선언은 동일한 의미
+def legacy_func(x: Optional[int]) -> int:  # 3.9 이전
+    return x or 0
+
+def modern_func(x: int | None) -> int:     # 3.9 이후
+    return x or 0
+```
+
+### b. `|` 연산자와 유니온 타입
+
+파이썬 3.10 이후, `|` 연산자는 타입 힌트와 일반 코드 모두에서 사용된다:
+
+```python
+# 타입 힌트 컨텍스트에서 | 연산자 (타입 유니온)
+def process(x: int | str) -> None:
+    print(x)
+
+# 이는 다음과 같다 (3.9 이전)
+from typing import Union
+def process_old(x: Union[int, str]) -> None:
+    print(x)
+    
+# 값 컨텍스트에서 | 연산자 (집합의 합집합)
+set1 = {1, 2, 3}
+set2 = {3, 4, 5}
+union = set1 | set2
+print(union)  # {1, 2, 3, 4, 5}
+```
+
+### c. 타입 정의에서 값의 사용
+
+클래스와 같은 타입 자체와 그 클래스의 인스턴스인 값을 구분하는 것이 중요하다:
+
+```python
+class User:
+    def __init__(self, name: str):
+        self.name = name
+
+# 사용 예시
+def get_user_name(user: User) -> str:  # User는 타입으로 사용
+    return user.name
+
+# 값 컨텍스트
+u = User("Alice")  # User는 클래스(생성자)로 사용, u는 값(인스턴스)
+```
+
+## 1.5.3 특수 타입 힌트 기법
 
 ### a. Literal 타입을 통한 값의 타입화
 
@@ -141,57 +196,26 @@ except ValueError as e:
 
 파이썬의 타입 힌트 시스템은 정적 분석용으로, 값의 범위를 강제하는 기능은 제한적이다. 따라서 범위 제한이 필요한 경우에는 런타임 검사를 별도로 구현해야 한다.
 
-### b. None과 Optional의 관계
+## 1.5.4 타입 힌트와 실제 런타임 동작의 차이
 
-`None`은 값이지만 타입 힌트 맥락에서는 특별한 의미가 있다:
-
-```python
-from typing import Optional
-
-# 아래 두 함수 선언은 동일한 의미
-def legacy_func(x: Optional[int]) -> int:  # 3.9 이전
-    return x or 0
-
-def modern_func(x: int | None) -> int:     # 3.9 이후
-    return x or 0
-```
-
-## 1.5.3 타입 연산자와 값 연산자의 구분
-
-### a. `|` 연산자의 이중적 사용
-
-파이썬 3.10 이후, `|` 연산자는 집합 연산과 타입 힌트에서 모두 사용된다:
+타입 힌트는 코드 실행에 영향을 주지 않는다는 점을 기억하는 것이 중요하다:
 
 ```python
-# 값 컨텍스트에서 | 연산자 (집합의 합집합)
-set1 = {1, 2, 3}
-set2 = {3, 4, 5}
-union = set1 | set2
-print(union)  # {1, 2, 3, 4, 5}
+# 타입 힌트와 실제 동작이 다른 경우
+def add(a: int, b: int) -> int:
+    # 실제로는 문자열 연결도 수행 가능
+    return a + b
 
-# 타입 힌트 컨텍스트에서 | 연산자 (타입 유니온)
-def process(x: int | str) -> None:
-    print(x)
+print(add(1, 2))     # 3
+print(add("a", "b")) # "ab" - 타입 힌트와 다르지만 실행됨
+
+# 타입 검사 도구만 오류 감지
+# mypy add.py - "error: Argument 1 to "add" has incompatible type "str"; expected "int""
 ```
 
-### b. 타입 정의에서 값의 사용
+파이썬의 타입 힌트 시스템은 정적 타입 언어의 장점을 동적 타입 언어에 도입하려는 시도이지만, 두 패러다임의 경계에서 발생하는 혼란은 불가피하다. 타입과 값이 명확히 구분되는 정적 타입 언어와 달리, 파이썬에서는 이 둘 사이의 경계가 모호한 경우가 많다.
 
-클래스와 같은 타입 자체와 그 클래스의 인스턴스인 값을 구분하는 것이 중요하다:
-
-```python
-class User:
-    def __init__(self, name: str):
-        self.name = name
-
-# 사용 예시
-def get_user_name(user: User) -> str:  # User는 타입으로 사용
-    return user.name
-
-# 값 컨텍스트
-u = User("Alice")  # User는 클래스(생성자)로 사용, u는 값(인스턴스)
-```
-
-## 1.5.4 타입 힌트 시스템의 확장된 사용법
+## 1.5.5 고급 타입 힌트 기법
 
 ### a. TypeVar와 제네릭 함수
 
@@ -210,42 +234,45 @@ result1 = first_element([1, 2, 3])  # int로 추론
 result2 = first_element(["a", "b"])  # str로 추론
 ```
 
-### b. TypeVar와 type 키워드의 차이
+### b. type, Type, TypeVar의 구분: 비슷하지만 다른 개념들
 
-`TypeVar`와 `type` 키워드는 혼동하기 쉽지만 완전히 다른 목적을 가진다:
+파이썬의 타입 시스템에는 비슷한 이름을 가진 여러 개념이 있어 혼란스러울 수 있다. 다음에 설명하는 이러한 타입 관련 도구들은 파이썬의 정적 타입 검사 기능을 강화하지만, 유사한 이름으로 인해 처음에는 혼란스러울 수 있다:
 
-```python
-from typing import TypeVar, List
+1. `type` 내장 함수: 객체의 타입을 반환하는 함수
 
-# 1. TypeVar: 제네릭 타입 파라미터 정의
-T = TypeVar('T')  # T는 어떤 타입이든 될 수 있는 타입 변수
+   ```python
+   print(type(42))  # <class 'int'>
+   print(type("hello"))  # <class 'str'>
+   ```
 
-# 제네릭 함수 - T는 호출 시점에 구체적인 타입으로 결정됨
-def first_of_list(items: List[T]) -> T:
-    return items[0]
+2. `type` 키워드 (Python 3.10+): 타입 별칭을 정의하는 키워드
 
-# 2. type 키워드: 타입 별칭(alias) 정의
-type IntList = list[int]  # IntList는 단순히 list[int]의 다른 이름
+    ```python
+    type IntList = list[int]  # 타입 별칭 정의
+    ```
 
-# 별칭을 사용한 함수 - 항상 동일한 타입으로 고정됨
-def sum_of_ints(numbers: IntList) -> int:
-    return sum(numbers)
+3. `typing.Type`: 클래스 자체를 타입 힌트로 사용할 때 필요한 제네릭
 
-# 사용 시 차이점
-ints = [1, 2, 3]
-strs = ["a", "b", "c"]
+    ```python
+    from typing import Type
+    
+    def factory(cls: Type[Base]): ...  # Base 또는 그 서브클래스를 받는 타입 힌트
+    ```
 
-first_int = first_of_list(ints)    # T가 int로 결정됨
-first_str = first_of_list(strs)    # T가 str로 결정됨
+4. `typing.TypeVar`: 제네릭 프로그래밍을 위한 타입 변수 생성기
 
-sum_result = sum_of_ints(ints)     # 정상 작동
-# sum_of_ints(strs)                # 타입 오류: strs는 IntList(list[int])가 아님
-```
+    ```python
+    from typing import TypeVar
+    
+    T = TypeVar('T')  # 타입 변수 T 정의
+    ```
 
-이러한 차이점을 요약하면:
-
-- `TypeVar`: 여러 다른 타입을 대체할 수 있는 '타입 변수'를 만든다(다형성 지원)
-- `type`: 기존 타입에 새로운 이름을 부여하는 '타입 별칭'을 만든다(가독성 향상)
+    `TypeVar('T')`의 문자열 인자에 관해:
+    * 문자열 인자는 타입 변수의 이름을 지정한다.
+    * 관례적으로 `T`, `U`, `V` 또는 `K`, `V` 등 짧은 대문자를 사용한다.
+    * 이 문자열은 오류 메시지나 IDE의 타입 정보 표시에서 참조된다.
+    * 문자열은 변수 이름과 동일하게 지정하는 것이 권장된다 (`T = TypeVar('T')`).
+    * 문자열로 어떤 이름도 사용 가능하나, 알파벳 한 글자나 설명적인 이름이 관례적이다
 
 ### c. 타입으로서의 타입(Type[...])
 
@@ -267,26 +294,5 @@ def create_instance(cls: Type[Base]) -> Base:
 b = create_instance(Base)     # 정상
 d = create_instance(Derived)  # 정상 (Derived는 Base의 서브클래스)
 ```
-
-## 1.5.5 타입 힌트와 실제 런타임 동작의 차이
-
-타입 힌트는 코드 실행에 영향을 주지 않는다는 점을 기억하는 것이 중요하다:
-
-```python
-# 타입 힌트와 실제 동작이 다른 경우
-def add(a: int, b: int) -> int:
-    # 실제로는 문자열 연결도 수행 가능
-    return a + b
-
-print(add(1, 2))     # 3
-print(add("a", "b")) # "ab" - 타입 힌트와 다르지만 실행됨
-
-# 타입 검사 도구만 오류 감지
-# mypy add.py - "error: Argument 1 to "add" has incompatible type "str"; expected "int""
-```
-
-파이썬의 타입 힌트 시스템은 정적 타입 언어의 장점을 동적 타입 언어에 도입하려는 시도이지만, 두 패러다임의 경계에서 발생하는 혼란은 불가피하다. 타입과 값이 명확히 구분되는 정적 타입 언어와 달리, 파이썬에서는 이 둘 사이의 경계가 모호한 경우가 많다.
-
-타입 힌트를 효과적으로 사용하려면 이러한 특성을 이해하고, 타입 체커(mypy 등)를 통해 문제를 조기에 발견하는 습관을 기르는 것이 중요하다.
 
 > [목차로 돌아가기](../../README.md) | [이전: 내장 전역 객체](./1_4_builtin_objects.md) | [다음: 내장 전역 함수](./1_6_builtin_functions.md)
