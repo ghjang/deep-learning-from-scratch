@@ -23,15 +23,9 @@
     y = x * 2  # IndentationError 발생: 들여쓰기 수준이 일치하지 않음
   ```
 
-들여쓰기 주의사항:
-  
-* __일관성__: 같은 블록의 들여쓰기 수준은 동일해야 함
-* __공백과 탭 혼용 금지__: 같은 파일에서 공백과 탭을 혼용하지 않음
-* __권장 방식__: PEP 8에 따라 4개의 공백 사용 권장
-* __빈 블록 처리__: 빈 블록에는 `pass`나 `...` 사용
-  
+중첩된 블록의 지정은 다음과 같이 작성할 수 있다:
+
 ```python
-# 중첩된 블록
 def outer_function():
     x = 10
     
@@ -40,6 +34,13 @@ def outer_function():
         
     inner_function()  # 내부 함수 호출
 ```
+
+들여쓰기 주의사항:
+  
+* __일관성__: 같은 블록의 들여쓰기 수준은 동일해야 함
+* __공백과 탭 혼용 금지__: 같은 파일에서 공백과 탭을 혼용하지 않음
+* __권장 방식__: PEP 8에 따라 4개의 공백 사용 권장
+* __빈 블록 처리__: 빈 블록에는 `pass`나 `...` 사용
 
 ## 1.1.2 '**' 연산자는 '거듭제곱'을 나타낸다
 
@@ -275,7 +276,7 @@ match command:
   
 ## 1.1.8 'yield'는 제너레이터 함수를 만드는 키워드이다
 
-  `yield`는 함수가 값을 반환하면서도 실행 상태를 유지하게 해주는 키워드로, 제너레이터 함수를 정의하는 데 사용된다:
+`yield`는 함수가 값을 반환하면서도 실행 상태를 유지하게 해주는 키워드로, 제너레이터 함수를 정의하는 데 사용된다:
 
   ```python
   # 기본적인 제너레이터 함수
@@ -296,201 +297,201 @@ match command:
       print(number)     # 3, 4, 5 출력
   ```
 
-  제너레이터는 다음과 같은 특징을 갖는다:
+제너레이터는 다음과 같은 특징을 갖는다:
+
+* __메모리 효율성__: 모든 결과를 한 번에 메모리에 저장하지 않고 필요할 때만 계산
+* __지연 평가__: 요청할 때만 다음 값을 생성 (lazy evaluation)
+* __상태 유지__: 함수의 실행 상태가 유지되어 다음 호출 시 이어서 실행
   
-  1. __메모리 효율성__: 모든 결과를 한 번에 메모리에 저장하지 않고 필요할 때만 계산
-  2. __지연 평가__: 요청할 때만 다음 값을 생성 (lazy evaluation)
-  3. __상태 유지__: 함수의 실행 상태가 유지되어 다음 호출 시 이어서 실행
+```python
+# 대용량 데이터 처리 예시
+def read_large_file(file_path, chunk_size=1024):
+    with open(file_path, 'r') as file:
+        while True:
+            data = file.read(chunk_size)
+            if not data:  # 파일의 끝에 도달
+                break
+            yield data
+                
+# 수 기가바이트 파일도 적은 메모리로 처리 가능
+for chunk in read_large_file('huge_log.txt'):
+    process_data(chunk)
+```
   
-  ```python
-  # 대용량 데이터 처리 예시
-  def read_large_file(file_path, chunk_size=1024):
-      with open(file_path, 'r') as file:
-          while True:
-              data = file.read(chunk_size)
-              if not data:  # 파일의 끝에 도달
-                  break
-              yield data
-                  
-  # 수 기가바이트 파일도 적은 메모리로 처리 가능
-  for chunk in read_large_file('huge_log.txt'):
-      process_data(chunk)
-  ```
+`yield from` 구문으로 다른 이터러블의 값을 위임해서 yield할 수 있다:
   
-  `yield from` 구문으로 다른 이터러블의 값을 위임해서 yield할 수 있다:
-  
-  ```python
-  def chain(*iterables):
-      for it in iterables:
-          yield from it  # it의 각 항목을 하나씩 yield
-          
-  # 사용 예시
-  result = list(chain([1, 2], [3, 4, 5], [6]))
-  print(result)  # [1, 2, 3, 4, 5, 6]
-  ```
+```python
+def chain(*iterables):
+    for it in iterables:
+        yield from it  # it의 각 항목을 하나씩 yield
+        
+# 사용 예시
+result = list(chain([1, 2], [3, 4, 5], [6]))
+print(result)  # [1, 2, 3, 4, 5, 6]
+```
 
 ## 1.1.9 컨텍스트 매니저(with 문)는 자원 관리를 자동화한다
 
-  컨텍스트 매니저는 파이썬의 "스코프 가드" 역할을 하는 구문으로, 리소스 획득과 해제를 자동화한다. 내부적으로는 `__enter__`와 `__exit__` 메서드 쌍으로 동작한다:
+컨텍스트 매니저는 파이썬의 "스코프 가드" 역할을 하는 구문으로, 리소스 획득과 해제를 자동화한다. 내부적으로는 `__enter__`와 `__exit__` 메서드 쌍으로 동작한다:
 
-  ```python
-  # 파일 자동 닫기
-  with open('file.txt', 'r') as file:  # __enter__ 호출: 파일 열기, 반환값을 file에 바인딩
-      data = file.read()
-  # 블록을 벗어날 때 자동으로 __exit__ 호출: 파일 닫기
-  ```
+```python
+# 파일 자동 닫기
+with open('file.txt', 'r') as file:  # __enter__ 호출: 파일 열기, 반환값을 file에 바인딩
+    data = file.read()
+# 블록을 벗어날 때 자동으로 __exit__ 호출: 파일 닫기
+```
 
-  컨텍스트 매니저의 내부 동작 흐름:
+컨텍스트 매니저의 내부 동작 흐름:
 
-  1. `with` 문 시작: 표현식의 `__enter__` 메서드 호출
-  2. `__enter__` 메서드의 반환 값을 `as` 뒤의 변수에 할당
-  3. 블록 내 코드 실행
-  4. 블록 종료 시 __어떤 상황에서든__ `__exit__` 메서드 호출
-     * 정상 종료: `__exit__(None, None, None)` 호출
-     * 예외 발생: `__exit__(exc_type, exc_value, traceback)` 호출
+1. `with` 문 시작: 표현식의 `__enter__` 메서드 호출
+2. `__enter__` 메서드의 반환 값을 `as` 뒤의 변수에 할당
+3. 블록 내 코드 실행
+4. 블록 종료 시 __어떤 상황에서든__ `__exit__` 메서드 호출
+    * 정상 종료: `__exit__(None, None, None)` 호출
+    * 예외 발생: `__exit__(exc_type, exc_value, traceback)` 호출
 
-  ```python
-  # 예외 처리 자동화 예시
-  class Transaction:
-      def __enter__(self):
-          print("트랜잭션 시작")
-          return self
-          
-      def __exit__(self, exc_type, exc_val, exc_tb):
-          if exc_type is None:
-              print("트랜잭션 커밋")
-              return True  # 정상 종료
-          else:
-              print(f"오류 발생: {exc_type}, 롤백 수행")
-              return False  # 예외 전파 (True 반환 시 예외 억제)
+```python
+# 예외 처리 자동화 예시
+class Transaction:
+    def __enter__(self):
+        print("트랜잭션 시작")
+        return self
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None:
+            print("트랜잭션 커밋")
+            return True  # 정상 종료
+        else:
+            print(f"오류 발생: {exc_type}, 롤백 수행")
+            return False  # 예외 전파 (True 반환 시 예외 억제)
+
+# 정상 케이스
+with Transaction() as tx:
+    print("작업 수행")
+# 출력:
+# 트랜잭션 시작
+# 작업 수행
+# 트랜잭션 커밋
+
+# 오류 케이스
+try:
+    with Transaction() as tx:
+        print("작업 시작")
+        raise ValueError("오류 발생!")  # 의도적 예외
+except ValueError:
+    print("예외 처리됨")
+# 출력:
+# 트랜잭션 시작
+# 작업 시작
+# 오류 발생: <class 'ValueError'>, 롤백 수행
+# 예외 처리됨
+```
   
-  # 정상 케이스
-  with Transaction() as tx:
-      print("작업 수행")
-  # 출력:
-  # 트랜잭션 시작
-  # 작업 수행
-  # 트랜잭션 커밋
+contextmanager 데코레이터를 사용하여 컨텍스트 매니저를 더 간단하게 구현해 사용할 수 있는 경우도 있다:
   
-  # 오류 케이스
-  try:
-      with Transaction() as tx:
-          print("작업 시작")
-          raise ValueError("오류 발생!")  # 의도적 예외
-  except ValueError:
-      print("예외 처리됨")
-  # 출력:
-  # 트랜잭션 시작
-  # 작업 시작
-  # 오류 발생: <class 'ValueError'>, 롤백 수행
-  # 예외 처리됨
-  ```
+```python
+from contextlib import contextmanager
+
+@contextmanager
+def managed_resource():
+    print("리소스 획득")    # __enter__ 부분
+    try:
+        yield "리소스"      # as 뒤 변수에 할당되는 값
+    finally:                # 항상 실행됨 (__exit__ 부분)
+        print("리소스 해제") # 예외가 발생해도 반드시 실행
+        
+with managed_resource() as resource:
+    print(f"리소스 사용 중: {resource}")
+```
   
-  contextmanager 데코레이터를 사용하여 컨텍스트 매니저를 더 간단하게 구현해 사용할 수 있는 경우도 있다:
-  
-  ```python
-  from contextlib import contextmanager
-  
-  @contextmanager
-  def managed_resource():
-      print("리소스 획득")    # __enter__ 부분
-      try:
-          yield "리소스"      # as 뒤 변수에 할당되는 값
-      finally:                # 항상 실행됨 (__exit__ 부분)
-          print("리소스 해제") # 예외가 발생해도 반드시 실행
-          
-  with managed_resource() as resource:
-      print(f"리소스 사용 중: {resource}")
-  ```
-  
-  컨텍스트 매니저는 파일 핸들링, 데이터베이스 연결, 락(lock) 관리, 트랜잭션 제어 등 "획득-사용-해제" 패턴이 필요한 상황에서 코드 안전성을 높여준다.
+컨텍스트 매니저는 파일 핸들링, 데이터베이스 연결, 락(lock) 관리, 트랜잭션 제어 등 "획득-사용-해제" 패턴이 필요한 상황에서 코드 안전성을 높여준다.
 
 ## 1.1.10 'match-case'는 파이썬의 패턴 매칭 구문이다
 
-  파이썬 3.10부터 도입된 `match-case`는 다른 언어의 `switch-case`와 유사하지만 더 강력한 구조적 패턴 매칭 기능을 제공한다:
+파이썬 3.10부터 도입된 `match-case`는 다른 언어의 `switch-case`와 유사하지만 더 강력한 구조적 패턴 매칭 기능을 제공한다:
 
-  ```python
-  # 기본 사용법
-  def process_command(command):
-      match command:
-          case "quit":
-              return "종료합니다"
-          case "help":
-              return "도움말을 표시합니다"
-          case _:  # 와일드카드 패턴 (default 역할)
-              return f"알 수 없는 명령: {command}"
-  
-  # 시퀀스 패턴
-  def process_point(point):
-      match point:
-          case (0, 0):
-              return "원점"
-          case (0, y):
-              return f"y축 위의 점 (0, {y})"
-          case (x, 0):
-              return f"x축 위의 점 ({x}, 0)"
-          case (x, y):
-              return f"좌표 ({x}, {y})"
-          case _:
-              return "유효한 좌표가 아님"
-  
-  # 클래스 패턴
-  class Point:
-      def __init__(self, x, y):
-          self.x = x
-          self.y = y
-  
-  def locate_point(point):
-      match point:
-          case Point(x=0, y=0):
-              return "원점"
-          case Point(x=0, y=y):
-              return f"y축 위의 점"
-          case Point(x=x, y=0):
-              return f"x축 위의 점"
-          case Point():
-              return "일반 좌표"
-          case _:
-              return "점이 아님"
-  
-  # 가드 조건 사용
-  def check_value(value):
-      match value:
-          case int(n) if n < 0:
-              return "음수 정수"
-          case int(n) if n > 0:
-              return "양수 정수"
-          case int(0):
-              return "0"
-          case float(f):
-              return "실수"
-          case str(s):
-              return f"문자열: {s}"
-          case _:
-              return "기타 타입"
-  ```
+```python
+# 기본 사용법
+def process_command(command):
+    match command:
+        case "quit":
+            return "종료합니다"
+        case "help":
+            return "도움말을 표시합니다"
+        case _:  # 와일드카드 패턴 (default 역할)
+            return f"알 수 없는 명령: {command}"
 
-  `match-case`는 단순 값 비교뿐만 아니라 구조 분해, 타입 검사, 조건부 매칭 등을 모두 지원하여 복잡한 데이터 구조를 효과적으로 처리할 수 있다.
+# 시퀀스 패턴
+def process_point(point):
+    match point:
+        case (0, 0):
+            return "원점"
+        case (0, y):
+            return f"y축 위의 점 (0, {y})"
+        case (x, 0):
+            return f"x축 위의 점 ({x}, 0)"
+        case (x, y):
+            return f"좌표 ({x}, {y})"
+        case _:
+            return "유효한 좌표가 아님"
+
+# 클래스 패턴
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+def locate_point(point):
+    match point:
+        case Point(x=0, y=0):
+            return "원점"
+        case Point(x=0, y=y):
+            return f"y축 위의 점"
+        case Point(x=x, y=0):
+            return f"x축 위의 점"
+        case Point():
+            return "일반 좌표"
+        case _:
+            return "점이 아님"
+
+# 가드 조건 사용
+def check_value(value):
+    match value:
+        case int(n) if n < 0:
+            return "음수 정수"
+        case int(n) if n > 0:
+            return "양수 정수"
+        case int(0):
+            return "0"
+        case float(f):
+            return "실수"
+        case str(s):
+            return f"문자열: {s}"
+        case _:
+            return "기타 타입"
+```
+
+`match-case`는 단순 값 비교뿐만 아니라 구조 분해, 타입 검사, 조건부 매칭 등을 모두 지원하여 복잡한 데이터 구조를 효과적으로 처리할 수 있다.
 
 ## 1.1.11 '...'(Ellipsis)는 'pass'와 유사하게 사용된다
 
-  'pass'는 '아무것도 하지 않는 문장'이다. 예를 들어서 'if' 문에서 '아무것도 하지 않을 때' 사용할 수 있다:
+'pass'는 '아무것도 하지 않는 문장'이다. 예를 들어서 'if' 문에서 '아무것도 하지 않을 때' 사용할 수 있다:
 
-  ```python
-  if x < 0:
-      print('negative')
-  else:
-      ... # 올바른 파이썬 문법이다.
-  ```
+```python
+if x < 0:
+    print('negative')
+else:
+    ... # 올바른 파이썬 문법이다.
+```
 
-  pass와 마찬가지로 Ellipsis(...)는 문법적으로 유효한 표현식이지만 아무 작업도 수행하지 않는다.
+pass와 마찬가지로 Ellipsis(...)는 문법적으로 유효한 표현식이지만 아무 작업도 수행하지 않는다.
   
-  ```python
-  def todo_function():
-      ...  # 아직 구현하지 않은 함수
-  
-  class TodoClass:
-      ...  # 아직 구현하지 않은 클래스
-  ```
+```python
+def todo_function():
+    ...  # 아직 구현하지 않은 함수
+
+class TodoClass:
+    ...  # 아직 구현하지 않은 클래스
+```
 
 > [목차로 돌아가기](../../README.md) | [다음: 타입 힌트와 타입 시스템](1_2_type_system.md)
