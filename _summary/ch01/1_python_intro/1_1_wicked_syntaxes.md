@@ -6,7 +6,7 @@
 
 ## 1.1.1 들여쓰기는 파이썬의 블록 구분 문법이다
 
-  파이썬은 중괄호({})가 아닌 들여쓰기를 사용해 코드 블록을 구분한다:
+파이썬은 중괄호({})가 아닌 들여쓰기를 사용해 코드 블록을 구분한다:
   
   ```python
   # 올바른 들여쓰기
@@ -23,7 +23,7 @@
     y = x * 2  # IndentationError 발생: 들여쓰기 수준이 일치하지 않음
   ```
 
-  들여쓰기 주의사항:
+들여쓰기 주의사항:
   
   1. __일관성__: 같은 블록의 들여쓰기 수준은 동일해야 함
   2. __공백과 탭 혼용 금지__: 같은 파일에서 공백과 탭을 혼용하지 않음
@@ -43,15 +43,15 @@
 
 ## 1.1.2 '**' 연산자는 '거듭제곱'을 나타낸다
 
-  예를 들어 '2 ** 3'은 '2의 3제곱'을 의미한다.
+예를 들어 '2 ** 3'은 '2의 3제곱'을 의미한다.
 
 ## 1.1.3 '//' 연산자는 '나눗셈의 몫'을 나타낸다
 
-  예를 들어 '7 // 5'는 '7을 5로 나눈 몫'을 의미한다.
+예를 들어 '7 // 5'는 '7을 5로 나눈 몫'을 의미한다.
 
 ## 1.1.4 ':='(왈러스 연산자)는 할당과 표현식을 동시에 수행한다
 
-  파이썬 3.8부터 도입된 왈러스 연산자는 변수에 값을 할당하면서 동시에 그 표현식을 평가할 수 있게 해준다:
+파이썬 3.8부터 도입된 왈러스 연산자는 변수에 값을 할당하면서 동시에 그 표현식을 평가할 수 있게 해준다:
 
   ```python
   # 일반적인 방식
@@ -73,151 +73,151 @@
 
 ## 1.1.5 언패킹 연산자 '*', '**'는 시퀀스와 매핑을 풀어준다
 
-  파이썬에서는 두 가지 유형의 언패킹 연산자가 있다:
+파이썬에서는 두 가지 유형의 언패킹 연산자가 있다:
 
-  1. `*` 연산자 - 시퀀스 언패킹(리스트, 튜플, 문자열 등):
+### a. `*` 연산자 - 시퀀스 언패킹(리스트, 튜플, 문자열 등)
   
-     ```python
-     # 시퀀스 분해하여 변수에 할당
-     first, *middle, last = [1, 2, 3, 4, 5]
-     print(first)   # 1
-     print(middle)  # [2, 3, 4]
-     print(last)    # 5
-     
-     # 함수 호출 시 시퀀스를 개별 인자로 확장
-     def add(a, b, c):
-         return a + b + c
-         
-     values = [1, 2, 3]
-     print(add(*values))  # 6  (add(1, 2, 3)와 동일)
-     
-     # 리스트 병합
-     list1 = [1, 2, 3]
-     list2 = [4, 5]
-     combined = [*list1, *list2]
-     print(combined)  # [1, 2, 3, 4, 5]
-     ```
+```python
+# 시퀀스 분해하여 변수에 할당
+first, *middle, last = [1, 2, 3, 4, 5]
+print(first)   # 1
+print(middle)  # [2, 3, 4]
+print(last)    # 5
+
+# 함수 호출 시 시퀀스를 개별 인자로 확장
+def add(a, b, c):
+    return a + b + c
+    
+values = [1, 2, 3]
+print(add(*values))  # 6  (add(1, 2, 3)와 동일)
+
+# 리스트 병합
+list1 = [1, 2, 3]
+list2 = [4, 5]
+combined = [*list1, *list2]
+print(combined)  # [1, 2, 3, 4, 5]
+```
   
-  2. `**` 연산자 - 딕셔너리 언패킹(키-값 쌍):
+### b. `**` 연산자 - 딕셔너리 언패킹(키-값 쌍)
   
-     ```python
-     # 딕셔너리를 키워드 인자로 확장
-     def create_profile(name, age, job):
-         return f"{name}, {age}, {job}"
-     
-     data = {"name": "Kim", "age": 30, "job": "Developer"}
-     profile = create_profile(**data)  # create_profile(name="Kim", age=30, job="Developer")와 동일
-     
-     # 딕셔너리 병합 (Python 3.5+)
-     defaults = {"color": "red", "size": "medium"}
-     options = {"size": "large", "material": "cotton"}
-     settings = {**defaults, **options}
-     print(settings)  # {'color': 'red', 'size': 'large', 'material': 'cotton'}
-     # 중복 키는 나중에 오는 딕셔너리의 값으로 덮어씌워짐
-     ```
+```python
+# 딕셔너리를 키워드 인자로 확장
+def create_profile(name, age, job):
+    return f"{name}, {age}, {job}"
 
-  3. 함수 정의에서의 언패킹 - 가변 인자 처리:
+data = {"name": "Kim", "age": 30, "job": "Developer"}
+profile = create_profile(**data)  # create_profile(name="Kim", age=30, job="Developer")와 동일
+
+# 딕셔너리 병합 (Python 3.5+)
+defaults = {"color": "red", "size": "medium"}
+options = {"size": "large", "material": "cotton"}
+settings = {**defaults, **options}
+print(settings)  # {'color': 'red', 'size': 'large', 'material': 'cotton'}
+# 중복 키는 나중에 오는 딕셔너리의 값으로 덮어씌워짐
+```
+
+### c. 함수 정의에서의 언패킹 - 가변 인자 처리
   
-     ```python
-     # *args: 가변 길이 위치 인자
-     def sum_all(*args):
-         """임의 개수의 인자를 받아 모두 더하는 함수"""
-         total = 0
-         for num in args:
-             total += num
-         return total
-     
-     print(sum_all(1, 2, 3))        # 6
-     print(sum_all(10, 20, 30, 40)) # 100
-     
-     # **kwargs: 가변 길이 키워드 인자
-     def print_info(**kwargs):
-         """임의 개수의 키워드 인자를 받아 출력하는 함수"""
-         for key, value in kwargs.items():
-             print(f"{key}: {value}")
-     
-     print_info(name="Kim", age=30, job="Developer")
-     # 출력:
-     # name: Kim
-     # age: 30
-     # job: Developer
-     
-     # *args와 **kwargs 함께 사용
-     def flexible_function(*args, **kwargs):
-         """위치 인자와 키워드 인자를 모두 받는 유연한 함수"""
-         print(f"위치 인자: {args}")
-         print(f"키워드 인자: {kwargs}")
-     
-     flexible_function(1, 2, 3, name="Test", value=True)
-     # 출력:
-     # 위치 인자: (1, 2, 3)
-     # 키워드 인자: {'name': 'Test', 'value': True}
-     ```
+```python
+# *args: 가변 길이 위치 인자
+def sum_all(*args):
+    """임의 개수의 인자를 받아 모두 더하는 함수"""
+    total = 0
+    for num in args:
+        total += num
+    return total
 
-     __일반 파라미터와 언패킹 파라미터 혼합:__
+print(sum_all(1, 2, 3))        # 6
+print(sum_all(10, 20, 30, 40)) # 100
 
-     파이썬에서 함수 정의 시 일반 파라미터와 언패킹 파라미터를 함께 사용할 때는 엄격한 순서 규칙을 따라야 한다:
+# **kwargs: 가변 길이 키워드 인자
+def print_info(**kwargs):
+    """임의 개수의 키워드 인자를 받아 출력하는 함수"""
+    for key, value in kwargs.items():
+        print(f"{key}: {value}")
 
-     ```python
-     # 파라미터 순서 규칙
-     def complex_function(
-         pos1, pos2,              # 1. 일반 위치 파라미터
-         /,                       # 위치 전용 파라미터 구분자 (3.8+)
-         pos_or_kwd1, pos_or_kwd2,# 2. 위치 또는 키워드로 전달 가능한 파라미터
-         *args,                   # 3. 추가 위치 인자 (튜플로 수집)
-         kwd1, kwd2,              # 4. 키워드 전용 파라미터 (키워드로만 전달 가능)
-         **kwargs                 # 5. 추가 키워드 인자 (딕셔너리로 수집)
-     ):
-         print(f"위치 전용: {pos1}, {pos2}")
-         print(f"위치 또는 키워드: {pos_or_kwd1}, {pos_or_kwd2}")
-         print(f"추가 위치 인자: {args}")
-         print(f"키워드 전용: {kwd1, kwd2}")
-         print(f"추가 키워드 인자: {kwargs}")
-     
-     # 호출 예시
-     complex_function(
-         1, 2,                    # pos1, pos2 (위치 전용)
-         "a", "b",                # pos_or_kwd1, pos_or_kwd2
-         "extra1", "extra2",      # *args로 수집됨
-         kwd1="k1", kwd2="k2",    # kwd1, kwd2 (키워드 전용)
-         extra_kwd="extra_val"    # **kwargs로 수집됨
-     )
-     ```
+print_info(name="Kim", age=30, job="Developer")
+# 출력:
+# name: Kim
+# age: 30
+# job: Developer
 
-     __주의사항:__
+# *args와 **kwargs 함께 사용
+def flexible_function(*args, **kwargs):
+    """위치 인자와 키워드 인자를 모두 받는 유연한 함수"""
+    print(f"위치 인자: {args}")
+    print(f"키워드 인자: {kwargs}")
 
-     1. __순서 규칙 위반은 SyntaxError 발생__:
+flexible_function(1, 2, 3, name="Test", value=True)
+# 출력:
+# 위치 인자: (1, 2, 3)
+# 키워드 인자: {'name': 'Test', 'value': True}
+```
 
-        ```python
-        # 잘못된 예: *args가 키워드 전용 인자보다 뒤에 위치
-        def wrong_order(a, b, kwd_only=None, *args):  # 구문 오류 발생!
-            pass
-        ```
+__일반 파라미터와 언패킹 파라미터 혼합:__
 
-     2. __기본값은 위치 전용이나 위치/키워드 인자에만 지정 가능__:
+파이썬에서 함수 정의 시 일반 파라미터와 언패킹 파라미터를 함께 사용할 때는 엄격한 순서 규칙을 따라야 한다:
 
-        ```python
-        # 올바른 예
-        def func(a, b=10, *, c, d=20):
-            pass
-            
-        func(1, c=3)  # a=1, b=10, c=3, d=20
-        ```
+```python
+# 파라미터 순서 규칙
+def complex_function(
+    pos1, pos2,              # 1. 일반 위치 파라미터
+    /,                       # 위치 전용 파라미터 구분자 (3.8+)
+    pos_or_kwd1, pos_or_kwd2,# 2. 위치 또는 키워드로 전달 가능한 파라미터
+    *args,                   # 3. 추가 위치 인자 (튜플로 수집)
+    kwd1, kwd2,              # 4. 키워드 전용 파라미터 (키워드로만 전달 가능)
+    **kwargs                 # 5. 추가 키워드 인자 (딕셔너리로 수집)
+):
+    print(f"위치 전용: {pos1}, {pos2}")
+    print(f"위치 또는 키워드: {pos_or_kwd1}, {pos_or_kwd2}")
+    print(f"추가 위치 인자: {args}")
+    print(f"키워드 전용: {kwd1, kwd2}")
+    print(f"추가 키워드 인자: {kwargs}")
 
-     3. __파이썬 3.8부터 위치 전용 파라미터 도입__:
+# 호출 예시
+complex_function(
+    1, 2,                    # pos1, pos2 (위치 전용)
+    "a", "b",                # pos_or_kwd1, pos_or_kwd2
+    "extra1", "extra2",      # *args로 수집됨
+    kwd1="k1", kwd2="k2",    # kwd1, kwd2 (키워드 전용)
+    extra_kwd="extra_val"    # **kwargs로 수집됨
+)
+```
 
-        `/` 구분자 이전의 파라미터는 반드시 위치 인자로만 전달해야 함
+__주의사항:__
 
-        ```python
-        def pos_only_func(x, y, /, z):
-            print(x, y, z)
-            
-        pos_only_func(1, 2, z=3)    # 가능
-        pos_only_func(1, 2, 3)      # 가능
-        pos_only_func(x=1, y=2, z=3)# 오류! x, y는 위치 전용
-        ```
+* __순서 규칙 위반은 SyntaxError 발생__:
 
-  이 언패킹 연산자들은 코드를 더 간결하게 만들고, 가변 길이의 인자를 다룰 때 유용하다.
+    ```python
+    # 잘못된 예: *args가 키워드 전용 인자보다 뒤에 위치
+    def wrong_order(a, b, kwd_only=None, *args):  # 구문 오류 발생!
+        pass
+    ```
+
+* __기본값은 위치 전용이나 위치/키워드 인자에만 지정 가능__:
+
+    ```python
+    # 올바른 예
+    def func(a, b=10, *, c, d=20):
+        pass
+        
+    func(1, c=3)  # a=1, b=10, c=3, d=20
+    ```
+
+* __파이썬 3.8부터 위치 전용 파라미터 도입__:
+
+    `/` 구분자 이전의 파라미터는 반드시 위치 인자로만 전달해야 함
+
+    ```python
+    def pos_only_func(x, y, /, z):
+        print(x, y, z)
+        
+    pos_only_func(1, 2, z=3)    # 가능
+    pos_only_func(1, 2, 3)      # 가능
+    pos_only_func(x=1, y=2, z=3)# 오류! x, y는 위치 전용
+    ```
+
+이 언패킹 연산자들은 코드를 더 간결하게 만들고, 가변 길이의 인자를 다룰 때 유용하다.
 
 ## 1.1.6 'is'는 객체 식별자 비교를 수행하는 키워드이다
 
