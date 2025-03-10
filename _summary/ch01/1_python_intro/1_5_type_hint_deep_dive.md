@@ -1,6 +1,6 @@
 # 1.5 타입 힌트 심화: 값과 타입의 경계
 
-> [목차로 돌아가기](../../README.md) | [이전: 내장 전역 객체](./1_4_builtin_objects.md) | [다음: 데이터 분석 라이브러리](../2_modules_related_to_ds/2_1_data_analysis_libraries.md)
+> [목차로 돌아가기](../../README.md) | [이전: 내장 전역 객체](./1_4_builtin_objects.md) | [다음: 내장 전역 함수](./1_6_builtin_functions.md)
 
 ## 1.5.1 파이썬 타입 힌트의 이중성 이해하기
 
@@ -154,8 +154,8 @@ print(add("a", "b")) # "ab" - 타입 힌트와 다르지만 실행됨
 # mypy add.py - "error: Argument 1 to "add" has incompatible type "str"; expected "int""
 ```
 
-파이썬의 타입 힌트 시스템은 정적 타입 언어의 장점을 동적 타입 언어에 도입하려는 시도지만, 두 패러다임의 경계에서 발생하는 혼란은 불가피하다. 타입과 값이 명확히 구분되는 정적 타입 언어와 달리, 파이썬에서는 이 둘 사이의 경계가 모호한 경우가 많다.
+파이썬의 타입 힌트 시스템은 정적 타입 언어의 장점을 동적 타입 언어에 도입하려는 시도이지만, 두 패러다임의 경계에서 발생하는 혼란은 불가피하다. 타입과 값이 명확히 구분되는 정적 타입 언어와 달리, 파이썬에서는 이 둘 사이의 경계가 모호한 경우가 많다.
 
 타입 힌트를 효과적으로 사용하려면 이러한 특성을 이해하고, 타입 체커(mypy 등)를 통해 문제를 조기에 발견하는 습관을 기르는 것이 중요하다.
 
-> [목차로 돌아가기](../../README.md) | [이전: 내장 전역 객체](./1_4_builtin_objects.md) | [다음: 데이터 분석 라이브러리](../2_modules_related_to_ds/2_1_data_analysis_libraries.md)
+> [목차로 돌아가기](../../README.md) | [이전: 내장 전역 객체](./1_4_builtin_objects.md) | [다음: 내장 전역 함수](./1_6_builtin_functions.md)
