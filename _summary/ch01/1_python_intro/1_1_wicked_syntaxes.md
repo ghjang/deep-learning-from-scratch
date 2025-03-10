@@ -221,7 +221,7 @@ __주의사항:__
 
 ## 1.1.6 'is'는 객체 식별자 비교를 수행하는 키워드이다
 
-  'is'는 두 변수가 메모리상에서 동일한 객체를 참조하는지 비교하는 키워드이다.
+'is'는 두 변수가 메모리상에서 동일한 객체를 참조하는지 비교하는 키워드이다.
   
 * '==' 연산자: 논리적 동등성(logical equality) 비교 - 두 객체의 값이 같은지 비교
 * 'is' 키워드: 물리적 동일성(physical identity) 비교 - 두 변수가 실제로 메모리 상 같은 객체를 가리키는지 비교
@@ -238,42 +238,40 @@ __주의사항:__
 
 ## 1.1.7 'as'는 컨텍스트에 따라 다른 역할을 하는 키워드이다
 
-  'as'는 파이썬에서 컨텍스트에 따라 다른 의미로 사용되는 키워드이다. 같은 키워드지만 사용되는 위치와 상황에 따라 다른 기능을 수행한다:
+'as'는 파이썬에서 컨텍스트에 따라 다른 의미로 사용되는 키워드이다. 다음과 같은 방식으로 'as' 키워드는 다양한 문맥에서 "이름 바인딩"이라는 일관된 개념을 유지하면서도 상황에 맞는 특화된 역할을 수행한다.
+
+### a. import 문에서 - 모듈이나 객체에 별칭(alias)을 부여
+
+```python
+import numpy as np
+from datetime import datetime as dt
+```
   
-  1. import 문에서 - 모듈이나 객체에 별칭(alias)을 부여:
+### b. with 문에서 - 컨텍스트 관리자의 반환값을 변수에 바인딩
 
-     ```python
-     import numpy as np
-     from datetime import datetime as dt
-     ```
+```python
+with open('file.txt') as file:
+    content = file.read()
+```
   
-  2. with 문에서 - 컨텍스트 관리자의 반환값을 변수에 바인딩:
+### c. except 절에서 - 발생한 예외 객체를 변수에 바인딩
 
-     ```python
-     with open('file.txt') as file:
-         content = file.read()
-     ```
+```python
+try:
+    result = 1 / 0
+except ZeroDivisionError as error:
+    print(f"에러 발생: {error}")
+```
   
-  3. except 절에서 - 발생한 예외 객체를 변수에 바인딩:
+### d. 패턴 매칭(Python 3.10+)에서 - 매칭된 값에 이름 부여
 
-     ```python
-     try:
-         result = 1 / 0
-     except ZeroDivisionError as error:
-         print(f"에러 발생: {error}")
-     ```
-  
-  4. 패턴 매칭(Python 3.10+)에서 - 매칭된 값에 이름 부여:
-
-     ```python
-     match command:
-         case ["quit" | "exit" as cmd]:
-             print(f"{cmd} 명령으로 종료합니다")
-         case ["save" as action, filename]:
-             print(f"{action}: {filename}에 저장합니다")
-     ```
-
-  이러한 방식으로 'as' 키워드는 다양한 문맥에서 "이름 바인딩"이라는 일관된 개념을 유지하면서도 상황에 맞는 특화된 역할을 수행한다.
+```python
+match command:
+    case ["quit" | "exit" as cmd]:
+        print(f"{cmd} 명령으로 종료합니다")
+    case ["save" as action, filename]:
+        print(f"{action}: {filename}에 저장합니다")
+```
   
 ## 1.1.8 'yield'는 제너레이터 함수를 만드는 키워드이다
 
