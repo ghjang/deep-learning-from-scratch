@@ -43,7 +43,7 @@
 | 적용 방식 | 언어의 기본 동작 | 선택적 주석 |
 | 강제성 | 타입 규칙 항상 적용 | 힌트일 뿐, 강제 안 함 |
 
-## 1.2.2 '타입 힌트' 기능의 발전
+## 1.2.2 '타입 힌트' 기능이 발전했다
 
 파이썬 3.9부터 많은 내장 타입들이 타입 힌트로 직접 사용 가능해졌다:
 
@@ -71,9 +71,9 @@ def process_data(numbers: list[int],
 
 위 예제에서 볼 수 있듯이:
 
-* 내장 컬렉션 타입(list, tuple, dict 등)을 직접 타입 힌트로 사용
-* Optional[T]는 T | None으로 단순화
-* Union[T1, T2]는 T1 | T2로 단순화
+* 내장 컬렉션 타입(`list`, `tuple`, `dict` 등)을 직접 타입 힌트로 사용
+* `Optional[T]`는 `T | None`으로 단순화
+* `Union[T1, T2]`는 `T1 | T2`로 단순화
 
 ## 1.2.3 긴 타입 이름에 대한 alias를 사용할 수 있다
 
@@ -94,13 +94,13 @@ type MixedType = int | str | float
 
 # 사용 예시
 def process_numbers(numbers: IntList) -> int:
-    return sum(numbers)
+    return sum(numbers)  # [1, 2, 3] → 6
 
 def process_config(config: StringDict) -> StringDict:
-    return {k.upper(): v.upper() for k, v in config.items()}
+    return {k.upper(): v.upper() for k, v in config.items()}  # {"a": "b"} → {"A": "B"}
 
 def process_data(data: MixedType) -> str:
-    return str(data)
+    return str(data)  # 123 → "123", "hello" → "hello"
 ```
 
 '타입 힌트'에서 별칭을 사용하면 코드가 더 읽기 쉬워지고 타입 힌트를 재사용할 수 있다.
@@ -142,9 +142,9 @@ tree: TreeNode = {
 
 재귀적 타입은 트리, 그래프, 중첩된 데이터 구조 등 자기 참조적 구조를 표현할 때 매우 유용하다.
 
-## 1.2.5 타입 힌트에서 '...'(Ellipsis) 활용하기
+## 1.2.5 타입 힌트에서 '...'(Ellipsis)를 활용한다
 
-파이썬의 타입 힌트에서 '...'는 다음과 같은 용도로 사용된다:
+파이썬의 타입 힌트에서 `...`는 다음과 같은 용도로 사용된다:
   
 1. 가변 길이 튜플 타입 정의:
 
@@ -155,7 +155,7 @@ tree: TreeNode = {
     Vector = Tuple[int, ...]
     
     def process_vector(v: Vector) -> int:
-        return sum(v)
+        return sum(v)  # (1, 2) → 3, (1, 2, 3, 4, 5) → 15
         
     # 사용 예시
     process_vector((1, 2))          # 유효
