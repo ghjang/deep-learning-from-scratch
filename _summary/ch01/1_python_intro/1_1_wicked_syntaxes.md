@@ -29,10 +29,18 @@
 def outer_function():
     x = 10
     
+    class InnerClass:
+        def display(self):
+            print(x)  # 외부 변수 접근
+    
     def inner_function():
         print(x)  # 외부 변수 접근
+        inner_instance = InnerClass()
+        inner_instance.display()  # 이너 클래스 메서드 호출
         
     inner_function()  # 내부 함수 호출
+
+outer_function()  # 외부 함수 호출
 ```
 
 들여쓰기 주의사항:
