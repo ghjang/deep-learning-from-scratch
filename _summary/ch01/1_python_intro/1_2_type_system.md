@@ -171,7 +171,7 @@ def process_vector(v: Vector) -> int:
 process_vector((1, 2))          # 유효
 process_vector((1, 2, 3, 4, 5)) # 유효
 ```
-  
+
 ### b. 타입 체킹에서 "구현 예정" 표시
 
 ```python
