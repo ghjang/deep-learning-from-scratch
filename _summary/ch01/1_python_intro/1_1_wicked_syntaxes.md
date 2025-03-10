@@ -110,17 +110,29 @@ print(7 // 3)     # 2 (몫만 반환)
   results = [transformed for x in data if (transformed := transform(x)) is not None]
   ```
 
-## 1.1.5 조건부 표현식은 `if-else`를 표현식으로 사용한다
+## 1.1.5 `if` 키워드는 제어문, 표현식, 가드 조건 등 다양한 맥락에서 사용된다
 
-파이썬에서는 `if-else` 문을 표현식으로 사용할 수 있어 한 줄로 조건에 따른 값 할당이 가능하다:
+파이썬에서 `if` 키워드는 다른 언어와 달리 여러 문맥에서 유연하게 활용된다:
+
+### a. 기본 제어 흐름 제어문
+
+가장 기본적인 형태로, 코드 실행 경로를 분기한다:
 
 ```python
-# 일반 if-else 제어문 구문
+# 기본적인 if-elif-else 제어 구조
 if x > 0:
-    result = "양수"
+    print("양수입니다")
+elif x == 0:
+    print("0입니다")
 else:
-    result = "음수 또는 0"
-    
+    print("음수입니다")
+```
+
+### b. 조건부 표현식
+
+파이썬에서는 `if-else` 문을 표현식으로 사용해 한 줄로 조건에 따른 값 할당이 가능하다:
+
+```python
 # 조건부 표현식 (conditional expression)
 result = "양수" if x > 0 else "음수 또는 0"
 ```
@@ -135,7 +147,7 @@ value = true_expr if condition else false_expr
 # value = condition ? true_expr : false_expr
 ```
 
-### 활용 예시
+#### 활용 예시
 
 ```python
 # 함수 반환값에 사용
@@ -156,7 +168,7 @@ print(greeting)  # "환영합니다 관리자 Kim님"
 print("합격" if score >= 60 else "불합격")
 ```
 
-### 중첩된 조건부 표현식
+#### 중첩된 조건부 표현식
 
 조건부 표현식은 중첩될 수 있지만, 가독성이 떨어질 수 있으므로 주의해야 한다:
 
@@ -173,7 +185,37 @@ else:
     result = "음수"
 ```
 
-조건부 표현식은 간결함과 명확함 사이의 균형을 고려하여 적절하게 사용해야 한다.
+### c. 패턴 매칭의 가드 조건
+
+Python 3.10부터 도입된 `match-case`에서 `if`는 패턴 매칭 후 추가 조건을 검사하는 가드 역할을 한다:
+
+```python
+def check_point(point):
+    match point:
+        case (x, y) if x == y:  # 패턴 매칭 후 가드 조건 검사
+            return f"대각선 위의 점 ({x}, {y})"
+        case (x, y) if x > 0 and y > 0:
+            return f"제1사분면의 점 ({x}, {y})"
+        case _:
+            return "기타 위치의 점"
+```
+
+### d. 리스트 컴프리헨션의 필터링
+
+리스트 컴프리헨션에서 `if`는 요소를 필터링하는 역할을 한다:
+
+```python
+# if를 사용한 필터링
+even_numbers = [x for x in range(10) if x % 2 == 0]
+print(even_numbers)  # [0, 2, 4, 6, 8]
+
+# 여러 조건 조합
+matrix = [[1, 2], [3, 4], [5, 6]]
+flattened = [x for row in matrix if len(row) > 0 for x in row if x % 2 == 0]
+print(flattened)  # [2, 4, 6]
+```
+
+파이썬의 `if` 키워드는 이처럼 다양한 맥락에서 유연하게 사용될 수 있어, 상황에 적합한 간결한 코드 작성이 가능하다.
 
 ## 1.1.6 언패킹 연산자 `*`, `**`는 시퀀스와 매핑을 풀어준다
 
@@ -370,7 +412,7 @@ except ZeroDivisionError as error:
 ### 패턴 매칭(Python 3.10+)에서 - 매칭된 값에 이름 부여
 
 ```python
-command = ["save", "example.txt"]
+command = ["save", "example.txt"]   # 예시 커맨드
 
 match command:
     case ["quit" | "exit" as cmd]:
@@ -511,9 +553,9 @@ with managed_resource() as resource:
   
 컨텍스트 매니저는 파일 핸들링, 데이터베이스 연결, 락(lock) 관리, 트랜잭션 제어 등 "획득-사용-해제" 패턴이 필요한 상황에서 코드 안전성을 높여준다.
 
-## 1.1.10 'match-case'는 파이썬의 패턴 매칭 구문이다
+## 1.1.10 `match-case`는 파이썬의 패턴 매칭 구문이다
 
-파이썬 3.10부터 도입된 `match-case`는 다른 언어의 `switch-case`와 유사하지만 더 강력한 구조적 패턴 매칭 기능을 제공한다:
+파이썬 3.10부터 도입된 `match-case`는 다른 언어의 `switch-case`와 유사하지만 더 강력한 구조적 패턴 매칭 기능을 제공한다.
 
 ```python
 # 기본 사용법
@@ -525,22 +567,52 @@ def process_command(command):
             return "도움말을 표시합니다"
         case _:  # 와일드카드 패턴 (default 역할)
             return f"알 수 없는 명령: {command}"
+```
 
-# 시퀀스 패턴
+### 패턴 매칭의 주요 기능
+
+#### a. __구조 분해 기능__: 복합 데이터 타입의 내부 값을 변수에 바인딩
+
+```python
+# 튜플 패턴
 def process_point(point):
     match point:
         case (0, 0):
             return "원점"
-        case (0, y):
+        case (0, y):  # y는 두 번째 요소 값을 담는 변수
             return f"y축 위의 점 (0, {y})"
-        case (x, 0):
+        case (x, 0):  # x는 첫 번째 요소 값을 담는 변수
             return f"x축 위의 점 ({x}, 0)"
-        case (x, y):
+        case (x, y):  # x, y에 각각 요소 값이 바인딩됨
             return f"좌표 ({x}, {y})"
         case _:
             return "유효한 좌표가 아님"
 
-# 클래스 패턴
+print(process_point((0, 5)))  # "y축 위의 점 (0, 5)"
+```
+
+#### b. __시퀀스 패턴__: 리스트 등 시퀀스 타입의 요소 매칭
+
+```python
+def process_command_list(commands):
+    match commands:
+        case []:
+            return "명령이 없습니다"
+        case ["quit"]:
+            return "종료 명령"
+        case ["load", filename]:  # 두 번째 요소를 filename에 바인딩
+            return f"{filename} 파일 로드"
+        case ["save", filename, "backup"]:
+            return f"{filename} 백업 저장"
+        case ["save", *filenames]:  # 여러 파일 이름을 filenames 리스트에 바인딩
+            return f"여러 파일 저장: {filenames}"
+
+print(process_command_list(["save", "doc1.txt", "doc2.txt"]))  # "여러 파일 저장: ['doc1.txt', 'doc2.txt']"
+```
+
+#### c. __클래스 패턴__: 객체의 속성 기반 매칭
+
+```python
 class Point:
     def __init__(self, x, y):
         self.x = x
@@ -550,33 +622,73 @@ def locate_point(point):
     match point:
         case Point(x=0, y=0):
             return "원점"
-        case Point(x=0, y=y):
-            return f"y축 위의 점"
-        case Point(x=x, y=0):
-            return f"x축 위의 점"
+        case Point(x=0, y=y):  # x가 0이고, y 속성값을 y 변수에 바인딩
+            return f"y축 위의 점, y={y}"
+        case Point(x=x, y=0):  # y가 0이고, x 속성값을 x 변수에 바인딩
+            return f"x축 위의 점, x={x}"
         case Point():
             return "일반 좌표"
         case _:
             return "점이 아님"
 
-# 가드 조건 사용
-def check_value(value):
-    match value:
-        case int(n) if n < 0:
-            return "음수 정수"
-        case int(n) if n > 0:
-            return "양수 정수"
-        case int(0):
-            return "0"
-        case float(f):
-            return "실수"
-        case str(s):
-            return f"문자열: {s}"
-        case _:
-            return "기타 타입"
+print(locate_point(Point(0, 5)))  # "y축 위의 점, y=5"
 ```
 
-`match-case`는 단순 값 비교뿐만 아니라 구조 분해, 타입 검사, 조건부 매칭 등을 모두 지원하여 복잡한 데이터 구조를 효과적으로 처리할 수 있다.
+### 타입 패턴과 가드 조건
+
+`match-case`에서는 값의 타입을 검사하고 값을 변수에 바인딩할 수 있으며, 추가 조건(`if` 가드)도 지정할 수 있다:
+
+```python
+def check_value(value):
+    match value:
+        case int(n) if n < 0:  # value가 int 타입이고 음수일 때
+            # n에는 value의 값이 바인딩됨
+            return f"음수 정수: {n}"
+        case int(n) if n > 0:  # value가 int 타입이고 양수일 때
+            return f"양수 정수: {n}"
+        case int(0):           # value가 정확히 정수 0일 때
+            return "0"
+        case float(f):         # value가 float 타입일 때, f에 그 값이 바인딩됨
+            return f"실수: {f}"
+        case str(s):           # value가 str 타입일 때, s에 그 값이 바인딩됨
+            return f"문자열: {s}"
+        case _:                # 그 외 모든 경우
+            return f"기타 타입: {type(value).__name__}"
+
+# 실행 예시
+print(check_value(-5))      # "음수 정수: -5"
+print(check_value(3.14))    # "실수: 3.14"
+print(check_value("hello")) # "문자열: hello"
+print(check_value([1,2,3])) # "기타 타입: list"
+```
+
+여기서 중요한 점:
+
+* `int(n)`, `float(f)` 등은 __생성자 호출이 아님__
+* 이것은 "value가 int 타입이면 그 값을 n에 바인딩하라"는 패턴 매칭 구문
+* 변수 바인딩이 성공하면 해당 케이스 내에서 변수를 사용할 수 있음
+* 가드 조건(`if n < 0` 등)은 패턴이 매칭된 후 추가 필터링을 위해 사용
+
+### 복합 패턴 예시
+
+여러 패턴을 조합하여 복잡한 데이터 구조를 효과적으로 처리할 수 있다:
+
+```python
+def process_data(data):
+    match data:
+        case {"type": "user", "name": name, "admin": True}:
+            return f"관리자: {name}"
+        case {"type": "user", "name": name}:
+            return f"일반 사용자: {name}"
+        case {"type": "product", "items": [{"name": item_name, "price": price}, *_]}:
+            return f"첫 상품: {item_name}, 가격: {price}"
+        case [{"id": id_val, **rest}, *_] if id_val > 100:
+            return f"ID {id_val}의 기록, 추가 정보: {rest}"
+        case _:
+            return "알 수 없는 데이터 형식"
+```
+
+`match-case`는 데이터 분석, 파싱, 이벤트 처리 등 복잡한 구조를 다루는 코드를 간결하고 가독성 있게 작성하는 데 큰 도움이 된다.
 
 ## 1.1.11 `...`(Ellipsis)는 `pass`와 유사하게 사용된다
 
