@@ -147,7 +147,7 @@ numbers = [1, -2, 3, -4, 5]
 abs_numbers = [n if n >= 0 else -n for n in numbers]
 print(abs_numbers)  # [1, 2, 3, 4, 5]
 
-# 딕셔너리 생성 시 사용
+# 딕셔너리와 함께 사용
 user = {"name": "Kim", "admin": True}
 greeting = f"환영합니다 {'관리자' if user['admin'] else '사용자'} {user['name']}님"
 print(greeting)  # "환영합니다 관리자 Kim님"
@@ -260,7 +260,7 @@ flexible_function(1, 2, 3, name="Test", value=True)
 
 __일반 파라미터와 언패킹 파라미터 혼합:__
 
-파이썬에서 함수 정의 시 일반 파라미터와 언패킹 파라미터를 함께 사용할 때는 엄격한 순서 규칙을 따라야 한다:
+파이썬에서 함수 정의 시 일반 파라미터와 언패킹 파라미터를 함께 사용할 때는 엄격한 순서 규칙을 따라야 한다.
 
 ```python
 # 파라미터 순서 규칙
@@ -370,10 +370,12 @@ except ZeroDivisionError as error:
 ### 패턴 매칭(Python 3.10+)에서 - 매칭된 값에 이름 부여
 
 ```python
+command = ["save", "example.txt"]
+
 match command:
     case ["quit" | "exit" as cmd]:
         print(f"{cmd} 명령으로 종료합니다")
-    case ["save" as action, filename]:
+    case ["save" as action, filename]:  # 예시 커맨드는 이 경우에 매칭됨.
         print(f"{action}: {filename}에 저장합니다")
 ```
   
