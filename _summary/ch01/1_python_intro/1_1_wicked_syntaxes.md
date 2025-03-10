@@ -110,337 +110,7 @@ print(7 // 3)     # 2 (몫만 반환)
   results = [transformed for x in data if (transformed := transform(x)) is not None]
   ```
 
-## 1.1.5 `if` 키워드는 제어문, 표현식, 가드 조건 등 다양한 맥락에서 사용된다
-
-파이썬에서 `if` 키워드는 다른 언어와 달리 여러 문맥에서 유연하게 활용된다:
-
-### a. 기본 제어 흐름 제어문
-
-가장 기본적인 형태로, 코드 실행 경로를 분기한다:
-
-```python
-# 기본적인 if-elif-else 제어 구조
-if x > 0:
-    print("양수입니다")
-elif x == 0:
-    print("0입니다")
-else:
-    print("음수입니다")
-```
-
-### b. 조건부 표현식
-
-파이썬에서는 `if-else` 문을 표현식으로 사용해 한 줄로 조건에 따른 값 할당이 가능하다:
-
-```python
-# 조건부 표현식 (conditional expression)
-result = "양수" if x > 0 else "음수 또는 0"
-```
-
-조건부 표현식의 구문은 다른 언어들의 삼항 연산자와 비슷하지만 더 영어 문장에 가깝다:
-
-```python
-# 파이썬 조건부 표현식
-value = true_expr if condition else false_expr
-
-# 다른 언어의 삼항 연산자 (예: JavaScript, Java, C++)
-# value = condition ? true_expr : false_expr
-```
-
-#### 활용 예시
-
-```python
-# 함수 반환값에 사용
-def get_absolute(x):
-    return x if x >= 0 else -x
-
-# 리스트 컴프리헨션과 함께 사용
-numbers = [1, -2, 3, -4, 5]
-abs_numbers = [n if n >= 0 else -n for n in numbers]
-print(abs_numbers)  # [1, 2, 3, 4, 5]
-
-# 딕셔너리와 함께 사용
-user = {"name": "Kim", "admin": True}
-greeting = f"환영합니다 {'관리자' if user['admin'] else '사용자'} {user['name']}님"
-print(greeting)  # "환영합니다 관리자 Kim님"
-
-# 함수 인자로 사용
-print("합격" if score >= 60 else "불합격")
-```
-
-#### 중첩된 조건부 표현식
-
-조건부 표현식은 중첩될 수 있지만, 가독성이 떨어질 수 있으므로 주의해야 한다:
-
-```python
-# 중첩 조건부 표현식
-result = "양수" if x > 0 else "0" if x == 0 else "음수"
-
-# 더 읽기 쉬운 동일 코드
-if x > 0:
-    result = "양수"
-elif x == 0:
-    result = "0"
-else:
-    result = "음수"
-```
-
-### c. 패턴 매칭의 가드 조건
-
-Python 3.10부터 도입된 `match-case`에서 `if`는 패턴 매칭 후 추가 조건을 검사하는 가드 역할을 한다:
-
-```python
-def check_point(point):
-    match point:
-        case (x, y) if x == y:  # 패턴 매칭 후 가드 조건 검사
-            return f"대각선 위의 점 ({x}, {y})"
-        case (x, y) if x > 0 and y > 0:
-            return f"제1사분면의 점 ({x}, {y})"
-        case _:
-            return "기타 위치의 점"
-```
-
-### d. 리스트 컴프리헨션의 필터링
-
-리스트 컴프리헨션에서 `if`는 요소를 필터링하는 역할을 한다:
-
-```python
-# if를 사용한 필터링
-even_numbers = [x for x in range(10) if x % 2 == 0]
-print(even_numbers)  # [0, 2, 4, 6, 8]
-
-# 여러 조건 조합
-matrix = [[1, 2], [3, 4], [5, 6]]
-flattened = [x for row in matrix if len(row) > 0 for x in row if x % 2 == 0]
-print(flattened)  # [2, 4, 6]
-```
-
-파이썬의 `if` 키워드는 이처럼 다양한 맥락에서 유연하게 사용될 수 있어, 상황에 적합한 간결한 코드 작성이 가능하다.
-
-## 1.1.6 `for` 루프는 반복문 외에도 다양한 구성에서 사용된다
-
-파이썬의 `for` 키워드는 기본적인 반복 제어 구조뿐 아니라 다양한 구성과 표현식에서 활용된다:
-
-### a. 기본 반복문
-
-가장 기본적인 형태의 반복 구조:
-
-```python
-# 시퀀스를 순회하는 기본 for 루프
-for item in [1, 2, 3, 4, 5]:
-    print(item)
-    
-# 범위를 순회
-for i in range(5):  # 0부터 4까지
-    print(i)
-```
-
-### b. 리스트 컴프리헨션
-
-`for`를 사용한 간결한 리스트 생성 표현식:
-
-```python
-# 일반적인 for 루프
-squares = []
-for x in range(10):
-    squares.append(x**2)
-
-# 리스트 컴프리헨션으로 동일한 작업
-squares = [x**2 for x in range(10)]
-print(squares)  # [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
-
-# 필터링을 포함한 컴프리헨션
-even_squares = [x**2 for x in range(10) if x % 2 == 0]
-print(even_squares)  # [0, 4, 16, 36, 64]
-```
-
-### c. 딕셔너리 및 세트 컴프리헨션
-
-리스트뿐 아니라 딕셔너리나 세트 생성에도 유사한 구문 사용:
-
-```python
-# 딕셔너리 컴프리헨션
-squares_dict = {x: x**2 for x in range(5)}
-print(squares_dict)  # {0: 0, 1: 1, 2: 4, 3: 9, 4: 16}
-
-# 세트 컴프리헨션
-unique_lengths = {len(name) for name in ["Alice", "Bob", "Charlie", "Bob"]}
-print(unique_lengths)  # {5, 3, 7}
-```
-
-### d. 중첩된 for 루프와 컴프리헨션
-
-여러 레벨의 반복문을 중첩하여 구성:
-
-```python
-# 중첩된 for 루프
-matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-flattened = []
-for row in matrix:
-    for num in row:
-        flattened.append(num)
-print(flattened)  # [1, 2, 3, 4, 5, 6, 7, 8, 9]
-
-# 중첩 컴프리헨션으로 동일한 작업
-flattened = [num for row in matrix for num in row]
-print(flattened)  # [1, 2, 3, 4, 5, 6, 7, 8, 9]
-```
-
-### e. 제너레이터 표현식
-
-메모리 효율적인 이터레이터를 생성하는 컴프리헨션 유사 구문:
-
-```python
-# 리스트 컴프리헨션 (모든 결과가 메모리에 즉시 생성됨)
-sum_squares_list = sum([x**2 for x in range(1000000)])
-
-# 제너레이터 표현식 (필요할 때만 값이 계산됨)
-sum_squares_gen = sum(x**2 for x in range(1000000))  # 괄호 주목: [] 대신 ()
-```
-
-### f. for-else 구문
-
-루프가 중간에 `break` 없이 완전히 실행되었을 때 실행될 코드:
-
-```python
-# 정수 리스트에서 소수 찾기
-def is_prime(n):
-    if n <= 1:
-        return False
-    if n <= 3:
-        return True
-    if n % 2 == 0 or n % 3 == 0:
-        return False
-    i = 5
-    while i * i <= n:
-        if n % i == 0 or n % (i + 2) == 0:
-            return False
-        i += 6
-    return True
-
-def find_first_prime(numbers):
-    for num in numbers:
-        if is_prime(num):
-            print(f"첫 번째 소수 발견: {num}")
-            break
-    else:  # for 루프가 break 없이 완료되었을 때 실행
-        print("소수를 찾지 못했습니다")
-
-find_first_prime([4, 6, 8, 9, 11])  # "첫 번째 소수 발견: 11"
-find_first_prime([4, 6, 8, 9, 10])  # "소수를 찾지 못했습니다"
-```
-
-파이썬의 `for` 루프는 이처럼 다양한 형태로 활용되어, 간결하면서도 가독성 높은 코드를 작성하는 데 도움을 준다.
-
-## 1.1.7 `_`(언더바)는 여러 특별한 용도로 사용되는 관례적 식별자이다
-
-파이썬에서 `_`(언더바)는 특별한 예약어나 키워드가 아닌 일반 식별자(변수명)이지만, 특정 패턴으로 사용될 때 관례적으로 특별한 의미를 갖는다. 파이썬 인터프리터와 커뮤니티는 이러한 패턴을 인식하고 특별하게 취급한다:
-
-```python
-# 일반 변수로서의 _
-_ = 42  # 단순히 _ 라는 이름의 변수에 값 할당
-print(_)  # 42
-```
-
-하지만 다음과 같은 여러 상황에서 `_`는 일반 변수 이상의 의미를 갖는다:
-
-### a. 값 무시하기 (자리표시자 식별자)
-
-의미 없는 값이나 사용하지 않을 값을 무시할 때 사용 - 이 맥락에서 `_`는 "이 값은 사용하지 않을 것이다"라는 프로그래머의 의도를 나타냄:
-
-```python
-# 튜플 언패킹 시 특정 값 무시
-x, _, y = (1, 2, 3)  # 2는 무시됨
-print(x, y)  # 1 3
-
-# 여러 값 무시
-first, *_ = [1, 2, 3, 4, 5]  # 첫 번째 값만 사용, 나머지는 무시
-print(first)  # 1
-```
-
-### b. 패턴 매칭에서의 와일드카드
-
-`match-case` 구문에서 와일드카드 패턴으로 사용:
-
-```python
-def process_command(cmd):
-    match cmd:
-        case ["quit"]:
-            return "종료"
-        case ["help"]:
-            return "도움말"
-        case _:  # 어떤 패턴에도 매칭되지 않을 때
-            return "알 수 없는 명령"
-```
-
-### c. 반복문에서 인덱스나 값을 무시할 때
-
-값이 필요 없는 반복문에서 사용:
-
-```python
-# 단순히 5번 반복
-for _ in range(5):
-    print("Hello")
-    
-# 튜플에서 특정 값만 사용
-data = [("Alice", 25), ("Bob", 30), ("Charlie", 35)]
-for name, _ in data:  # 나이는 무시
-    print(f"Name: {name}")
-```
-
-### d. 숫자 리터럴에서의 구분자 (Python 3.6+)
-
-큰 숫자의 가독성을 높이기 위한 구분자로 사용:
-
-```python
-# 숫자 구분자로 사용
-million = 1_000_000  # 1000000과 동일
-binary = 0b1010_1010  # 이진수 표현에서도 사용 가능
-```
-
-### e. 대화형 인터프리터에서 마지막 결과 참조
-
-Python 인터프리터(REPL)에서 최근 표현식의 결과를 참조:
-
-```python
->>> 10 + 20
-30
->>> _ * 2  # 이전 결과 30에 2를 곱함
-60
-```
-
-### f. 네이밍 컨벤션에서의 특별한 의미
-
-`_`로 시작하거나 끝나는 변수/메서드 이름은 특별한 의미를 가질 수 있다:
-
-```python
-class MyClass:
-    def __init__(self):
-        self.public_var = 1
-        self._private_var = 2  # 관례적으로 비공개 변수 (실제로는 접근 가능)
-        self.__really_private = 3  # 이름 맹글링으로 실제 접근 제한됨
-        
-    def _private_method(self):  # 관례적으로 비공개 메서드
-        pass
-```
-
-### g. 국제화/지역화를 위한 함수명
-
-국제화에서 `_` 함수는 문자열 번역을 위해 사용됨:
-
-```python
-import gettext
-gettext.bindtextdomain('myapp', '/path/to/translations')
-gettext.textdomain('myapp')
-_ = gettext.gettext
-
-# 번역 가능한 문자열
-print(_("Hello, world!"))  # 현재 로케일에 따라 번역된 문자열 출력
-```
-
-이렇게 파이썬에서 `_`는 단순한 변수명을 넘어 여러 관용적 용법과 특별한 의미를 가진다.
-
-## 1.1.8 언패킹 연산자 `*`, `**`는 시퀀스와 매핑을 풀어준다
+## 1.1.5 언패킹 연산자 `*`, `**`는 시퀀스와 매핑을 풀어준다
 
 파이썬에서는 두 가지 유형의 언패킹 연산자가 있다. 이러한 언패킹 연산자는 보통의 문장에서도 사용할 수도 있고, 함수 정의에서 가변 인자를 처리할 때 유용하게 사용된다.
 
@@ -588,6 +258,383 @@ __주의사항:__
 
 이 언패킹 연산자들은 코드를 더 간결하게 만들고, 가변 길이의 인자를 다룰 때 유용하다.
 
+## 1.1.6 `if` 키워드는 제어문, 표현식, 가드 조건 등 다양한 맥락에서 사용된다
+
+파이썬에서 `if` 키워드는 다른 언어와 달리 여러 문맥에서 유연하게 활용된다:
+
+### a. 기본 제어 흐름 제어문
+
+가장 기본적인 형태로, 코드 실행 경로를 분기한다:
+
+```python
+# 기본적인 if-elif-else 제어 구조
+if x > 0:
+    print("양수입니다")
+elif x == 0:
+    print("0입니다")
+else:
+    print("음수입니다")
+```
+
+### b. 조건부 표현식
+
+파이썬에서는 `if-else` 문을 표현식으로 사용해 한 줄로 조건에 따른 값 할당이 가능하다:
+
+```python
+# 조건부 표현식 (conditional expression)
+result = "양수" if x > 0 else "음수 또는 0"
+```
+
+조건부 표현식의 구문은 다른 언어들의 삼항 연산자와 비슷하지만 더 영어 문장에 가깝다:
+
+```python
+# 파이썬 조건부 표현식
+value = true_expr if condition else false_expr
+
+# 다른 언어의 삼항 연산자 (예: JavaScript, Java, C++)
+# value = condition ? true_expr : false_expr
+```
+
+#### 활용 예시
+
+```python
+# 함수 반환값에 사용
+def get_absolute(x):
+    return x if x >= 0 else -x
+
+# 리스트 컴프리헨션과 함께 사용
+numbers = [1, -2, 3, -4, 5]
+abs_numbers = [n if n >= 0 else -n for n in numbers]
+print(abs_numbers)  # [1, 2, 3, 4, 5]
+
+# 딕셔너리와 함께 사용
+user = {"name": "Kim", "admin": True}
+greeting = f"환영합니다 {'관리자' if user['admin'] else '사용자'} {user['name']}님"
+print(greeting)  # "환영합니다 관리자 Kim님"
+
+# 함수 인자로 사용
+print("합격" if score >= 60 else "불합격")
+```
+
+#### 중첩된 조건부 표현식
+
+조건부 표현식은 중첩될 수 있지만, 가독성이 떨어질 수 있으므로 주의해야 한다:
+
+```python
+# 중첩 조건부 표현식
+result = "양수" if x > 0 else "0" if x == 0 else "음수"
+
+# 더 읽기 쉬운 동일 코드
+if x > 0:
+    result = "양수"
+elif x == 0:
+    result = "0"
+else:
+    result = "음수"
+```
+
+### c. 패턴 매칭의 가드 조건
+
+Python 3.10부터 도입된 `match-case`에서 `if`는 패턴 매칭 후 추가 조건을 검사하는 가드 역할을 한다:
+
+```python
+def check_point(point):
+    match point:
+        case (x, y) if x == y:  # 패턴 매칭 후 가드 조건 검사
+            return f"대각선 위의 점 ({x}, {y})"
+        case (x, y) if x > 0 and y > 0:
+            return f"제1사분면의 점 ({x}, {y})"
+        case _:
+            return "기타 위치의 점"
+```
+
+### d. 리스트 컴프리헨션의 필터링
+
+리스트 컴프리헨션에서 `if`는 요소를 필터링하는 역할을 한다:
+
+```python
+# if를 사용한 필터링
+even_numbers = [x for x in range(10) if x % 2 == 0]
+print(even_numbers)  # [0, 2, 4, 6, 8]
+
+# 여러 조건 조합
+matrix = [[1, 2], [3, 4], [5, 6]]
+flattened = [x for row in matrix if len(row) > 0 for x in row if x % 2 == 0]
+print(flattened)  # [2, 4, 6]
+```
+
+파이썬의 `if` 키워드는 이처럼 다양한 맥락에서 유연하게 사용될 수 있어, 상황에 적합한 간결한 코드 작성이 가능하다.
+
+## 1.1.7 `for` 루프는 반복문 외에도 다양한 구성에서 사용된다
+
+파이썬의 `for` 키워드는 기본적인 반복 제어 구조뿐 아니라 다양한 구성과 표현식에서 활용된다:
+
+### a. 기본 반복문
+
+가장 기본적인 형태의 반복 구조:
+
+```python
+# 시퀀스를 순회하는 기본 for 루프
+for item in [1, 2, 3, 4, 5]:
+    print(item)
+    
+# 범위를 순회
+for i in range(5):  # 0부터 4까지
+    print(i)
+```
+
+### b. 리스트 컴프리헨션
+
+`for`를 사용한 간결한 리스트 생성 표현식:
+
+```python
+# 일반적인 for 루프
+squares = []
+for x in range(10):
+    squares.append(x**2)
+
+# 리스트 컴프리헨션으로 동일한 작업
+squares = [x**2 for x in range(10)]
+print(squares)  # [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+
+# 필터링을 포함한 컴프리헨션
+even_squares = [x**2 for x in range(10) if x % 2 == 0]
+print(even_squares)  # [0, 4, 16, 36, 64]
+```
+
+### c. 딕셔너리 및 세트 컴프리헨션
+
+리스트뿐 아니라 딕셔너리나 세트 생성에도 유사한 구문 사용:
+
+```python
+# 딕셔너리 컴프리헨션
+squares_dict = {x: x**2 for x in range(5)}
+print(squares_dict)  # {0: 0, 1: 1, 2: 4, 3: 9, 4: 16}
+
+# 세트 컴프리헨션
+unique_lengths = {len(name) for name in ["Alice", "Bob", "Charlie", "Bob"]}
+print(unique_lengths)  # {5, 3, 7}
+```
+
+### d. 중첩된 for 루프와 컴프리헨션
+
+여러 레벨의 반복문을 중첩하여 구성:
+
+```python
+# 중첩된 for 루프
+matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+flattened = []
+for row in matrix:
+    for num in row:
+        flattened.append(num)
+print(flattened)  # [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+# 중첩 컴프리헨션으로 동일한 작업
+flattened = [num for row in matrix for num in row]
+print(flattened)  # [1, 2, 3, 4, 5, 6, 7, 8, 9]
+```
+
+### e. 제너레이터 표현식
+
+메모리 효율적인 이터레이터를 생성하는 컴프리헨션 유사 구문:
+
+```python
+# 리스트 컴프리헨션 (모든 결과가 메모리에 즉시 생성됨)
+sum_squares_list = sum([x**2 for x in range(1000000)])
+
+# 제너레이터 표현식 (필요할 때만 값이 계산됨)
+sum_squares_gen = sum(x**2 for x in range(1000000))  # 괄호 주목: [] 대신 ()
+```
+
+### f. for-else 구문
+
+루프가 중간에 `break` 없이 완전히 실행되었을 때 실행될 코드:
+
+```python
+# 정수 리스트에서 소수 찾기
+def is_prime(n):
+    if n <= 1:
+        return False
+    if n <= 3:
+        return True
+    if n % 2 == 0 or n % 3 == 0:
+        return False
+    i = 5
+    while i * i <= n:
+        if n % i == 0 or n % (i + 2) == 0:
+            return False
+        i += 6
+    return True
+
+def find_first_prime(numbers):
+    for num in numbers:
+        if is_prime(num):
+            print(f"첫 번째 소수 발견: {num}")
+            break
+    else:  # for 루프가 break 없이 완료되었을 때 실행
+        print("소수를 찾지 못했습니다")
+
+find_first_prime([4, 6, 8, 9, 11])  # "첫 번째 소수 발견: 11"
+find_first_prime([4, 6, 8, 9, 10])  # "소수를 찾지 못했습니다"
+```
+
+파이썬의 `for` 루프는 이처럼 다양한 형태로 활용되어, 간결하면서도 가독성 높은 코드를 작성하는 데 도움을 준다.
+
+## 1.1.8 `_`(언더바)는 여러 특별한 용도로 사용되는 관례적 식별자이다
+
+파이썬에서 `_`(언더바)는 특별한 예약어나 키워드가 아닌 일반 식별자(변수명)이지만, 특정 패턴으로 사용될 때 관례적으로 특별한 의미를 갖는다. 파이썬 인터프리터와 커뮤니티는 이러한 패턴을 인식하고 특별하게 취급한다:
+
+```python
+# 일반 변수로서의 _
+_ = 42  # 단순히 _ 라는 이름의 변수에 값 할당
+print(_)  # 42
+```
+
+하지만 다음과 같은 여러 상황에서 `_`는 일반 변수 이상의 의미를 갖는다:
+
+### a. 값 무시하기 (자리표시자 식별자)
+
+의미 없는 값이나 사용하지 않을 값을 무시할 때 사용 - 이 맥락에서 `_`는 "이 값은 사용하지 않을 것이다"라는 프로그래머의 의도를 나타냄:
+
+```python
+# 튜플 언패킹 시 특정 값 무시
+x, _, y = (1, 2, 3)  # 2는 무시됨
+print(x, y)  # 1 3
+
+# 여러 값 무시
+first, *_ = [1, 2, 3, 4, 5]  # 첫 번째 값만 사용, 나머지는 무시
+print(first)  # 1
+```
+
+### b. 패턴 매칭에서의 와일드카드
+
+`match-case` 구문에서 와일드카드 패턴으로 사용:
+
+```python
+def process_command(cmd):
+    match cmd:
+        case ["quit"]:
+            return "종료"
+        case ["help"]:
+            return "도움말"
+        case _:  # 어떤 패턴에도 매칭되지 않을 때
+            return "알 수 없는 명령"
+```
+
+### c. 반복문에서 인덱스나 값을 무시할 때
+
+값이 필요 없는 반복문에서 사용:
+
+```python
+# 단순히 5번 반복
+for _ in range(5):
+    print("Hello")
+    
+# 튜플에서 특정 값만 사용
+data = [("Alice", 25), ("Bob", 30), ("Charlie", 35)]
+for name, _ in data:  # 나이는 무시
+    print(f"Name: {name}")
+```
+
+### d. 숫자 리터럴에서의 구분자 (Python 3.6+)
+
+큰 숫자의 가독성을 높이기 위한 구분자로 사용:
+
+```python
+# 숫자 구분자로 사용
+million = 1_000_000  # 1000000과 동일
+binary = 0b1010_1010  # 이진수 표현에서도 사용 가능
+```
+
+### e. 대화형 인터프리터에서 마지막 결과 참조
+
+Python 인터프리터(REPL)에서 최근 표현식의 결과를 참조:
+
+```python
+>>> 10 + 20
+30
+>>> _ * 2  # 이전 결과 30에 2를 곱함
+60
+```
+
+### f. 네이밍 컨벤션에서의 특별한 의미
+
+`_`로 시작하거나 끝나는 변수/메서드 이름은 특별한 의미를 가질 수 있다:
+
+```python
+class MyClass:
+    def __init__(self):
+        self.public_var = 1
+        self._private_var = 2  # 관례적으로 비공개 변수 (실제로는 접근 가능)
+        self.__really_private = 3  # 이름 맹글링으로 실제 접근 제한됨
+        
+    def _private_method(self):  # 관례적으로 비공개 메서드
+        pass
+```
+
+### g. 국제화/지역화를 위한 함수명
+
+국제화에서 `_` 함수는 문자열 번역을 위해 사용됨:
+
+```python
+import gettext
+gettext.bindtextdomain('myapp', '/path/to/translations')
+gettext.textdomain('myapp')
+_ = gettext.gettext
+
+# 번역 가능한 문자열
+print(_("Hello, world!"))  # 현재 로케일에 따라 번역된 문자열 출력
+```
+
+### h. 문맥에 따른 타입 변화와 참조 가능성
+
+`_`는 특별한 의미로 사용되더라도 일반 변수처럼 참조하고 사용할 수 있으며, 문맥에 따라 다양한 타입을 가질 수 있다:
+
+```python
+# 튜플 언패킹에서 '무시된' 값도 실제로는 _ 변수에 저장됨
+x, _ = (1, 2)
+print(_)  # 2 - 무시했지만 실제로 참조 가능
+
+# for 루프에서 반복자 변수로 사용 시
+for _ in range(3):
+    print(f"_ 값: {_}")  # _ 값: 0, _ 값: 1, _ 값: 2
+
+# 여러 값 무시 시 리스트 타입으로 저장
+first, *_ = [1, 2, 3, 4]
+print(type(_))  # <class 'list'>
+print(_)        # [2, 3, 4]
+
+# 와일드카드 패턴은 실제 매칭된 값이 _ 변수에 저장됨
+data = {"name": "Kim", "age": 30}
+match data:
+    case {"name": name, **_}:
+        print(f"이름: {name}, 추가 정보: {_}")  # 이름: Kim, 추가 정보: {'age': 30}
+```
+
+### 주의사항
+
+같은 스코프에서 다양한 용도로 `_`를 사용할 경우 혼동이 생길 수 있으므로 주의해야 한다:
+
+```python
+# 동일 스코프에서 혼합 사용 시 주의
+_ = "전역 값"
+
+def example():
+    for _ in range(2):  # 여기서 _ 값은 반복 횟수 (0, 1)
+        print(f"루프 내 _: {_}")
+    
+    x, _ = (10, 20)     # 여기서 _ 값은 20으로 변경됨
+    print(f"언패킹 후 _: {_}")
+    
+    return _            # 반환값은 20
+
+result = example()
+print(f"함수 반환값: {result}")  # 함수 반환값: 20
+print(f"전역 _: {_}")           # 전역 _: 전역 값 (변경되지 않음)
+```
+
+함수 내에서 특별한 의미로 `_`를 사용하더라도, 파이썬은 이를 그저 일반 변수처럼 취급하기 때문에 값이 할당되고 참조될 수 있다. 따라서 같은 스코프 내에서 여러 의미로 `_`를 사용할 때는 이전 값이 덮어씌워질 수 있음을 유의해야 한다.
+
 ## 1.1.9 `is`는 객체 식별자 비교를 수행하는 키워드이다
 
 `is`는 두 변수가 메모리상에서 동일한 객체를 참조하는지 비교하는 키워드이다.
@@ -644,63 +691,7 @@ match command:
         print(f"{action}: {filename}에 저장합니다")
 ```
   
-## 1.1.11 `yield`는 제너레이터 함수를 만드는 키워드이다
-
-`yield`는 함수가 값을 반환하면서도 실행 상태를 유지하게 해주는 키워드로, 제너레이터 함수를 정의하는 데 사용된다:
-
-  ```python
-  # 기본적인 제너레이터 함수
-  def count_up_to(max):
-      count = 1
-      while count <= max:
-          yield count  # 값을 반환하고 함수 상태 저장
-          count += 1   # 다음 호출 시 여기서부터 재개
-          
-  # 제너레이터 사용
-  counter = count_up_to(5)  # 제너레이터 객체 생성 (아직 실행되지 않음)
-  
-  print(next(counter))  # 1 (첫 번째 yield까지 실행)
-  print(next(counter))  # 2 (두 번째 yield까지 실행)
-  
-  # for 루프로 나머지 값 소비
-  for number in counter:
-      print(number)     # 3, 4, 5 출력
-  ```
-
-제너레이터는 다음과 같은 특징을 갖는다:
-
-* __메모리 효율성__: 모든 결과를 한 번에 메모리에 저장하지 않고 필요할 때만 계산
-* __지연 평가__: 요청할 때만 다음 값을 생성 (lazy evaluation)
-* __상태 유지__: 함수의 실행 상태가 유지되어 다음 호출 시 이어서 실행
-  
-```python
-# 대용량 데이터 처리 예시
-def read_large_file(file_path, chunk_size=1024):
-    with open(file_path, 'r') as file:
-        while True:
-            data = file.read(chunk_size)
-            if not data:  # 파일의 끝에 도달
-                break
-            yield data
-                
-# 수 기가바이트 파일도 적은 메모리로 처리 가능
-for chunk in read_large_file('huge_log.txt'):
-    process_data(chunk)
-```
-  
-`yield from` 구문으로 다른 이터러블의 값을 위임해서 yield할 수 있다:
-  
-```python
-def chain(*iterables):
-    for it in iterables:
-        yield from it  # it의 각 항목을 하나씩 yield
-        
-# 사용 예시
-result = list(chain([1, 2], [3, 4, 5], [6]))
-print(result)  # [1, 2, 3, 4, 5, 6]
-```
-
-## 1.1.12 컨텍스트 매니저(with 문)는 자원 관리를 자동화한다
+## 1.1.11 컨텍스트 매니저(with 문)는 자원 관리를 자동화한다
 
 컨텍스트 매니저는 파이썬의 "스코프 가드" 역할을 하는 구문으로, 리소스 획득과 해제를 자동화한다. 내부적으로는 `__enter__`와 `__exit__` 메서드 쌍으로 동작한다:
 
@@ -775,6 +766,62 @@ with managed_resource() as resource:
 ```
   
 컨텍스트 매니저는 파일 핸들링, 데이터베이스 연결, 락(lock) 관리, 트랜잭션 제어 등 "획득-사용-해제" 패턴이 필요한 상황에서 코드 안전성을 높여준다.
+
+## 1.1.12 `yield`는 제너레이터 함수를 만드는 키워드이다
+
+`yield`는 함수가 값을 반환하면서도 실행 상태를 유지하게 해주는 키워드로, 제너레이터 함수를 정의하는 데 사용된다:
+
+  ```python
+  # 기본적인 제너레이터 함수
+  def count_up_to(max):
+      count = 1
+      while count <= max:
+          yield count  # 값을 반환하고 함수 상태 저장
+          count += 1   # 다음 호출 시 여기서부터 재개
+          
+  # 제너레이터 사용
+  counter = count_up_to(5)  # 제너레이터 객체 생성 (아직 실행되지 않음)
+  
+  print(next(counter))  # 1 (첫 번째 yield까지 실행)
+  print(next(counter))  # 2 (두 번째 yield까지 실행)
+  
+  # for 루프로 나머지 값 소비
+  for number in counter:
+      print(number)     # 3, 4, 5 출력
+  ```
+
+제너레이터는 다음과 같은 특징을 갖는다:
+
+* __메모리 효율성__: 모든 결과를 한 번에 메모리에 저장하지 않고 필요할 때만 계산
+* __지연 평가__: 요청할 때만 다음 값을 생성 (lazy evaluation)
+* __상태 유지__: 함수의 실행 상태가 유지되어 다음 호출 시 이어서 실행
+  
+```python
+# 대용량 데이터 처리 예시
+def read_large_file(file_path, chunk_size=1024):
+    with open(file_path, 'r') as file:
+        while True:
+            data = file.read(chunk_size)
+            if not data:  # 파일의 끝에 도달
+                break
+            yield data
+                
+# 수 기가바이트 파일도 적은 메모리로 처리 가능
+for chunk in read_large_file('huge_log.txt'):
+    process_data(chunk)
+```
+  
+`yield from` 구문으로 다른 이터러블의 값을 위임해서 yield할 수 있다:
+  
+```python
+def chain(*iterables):
+    for it in iterables:
+        yield from it  # it의 각 항목을 하나씩 yield
+        
+# 사용 예시
+result = list(chain([1, 2], [3, 4, 5], [6]))
+print(result)  # [1, 2, 3, 4, 5, 6]
+```
 
 ## 1.1.13 `match-case`는 파이썬의 패턴 매칭 구문이다
 
