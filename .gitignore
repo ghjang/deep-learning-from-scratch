@@ -18,3 +18,4 @@ manim.cfg
 
 # .handy-man folder
 .handy-man/
+*.pkl
