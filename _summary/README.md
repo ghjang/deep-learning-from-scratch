@@ -8,6 +8,7 @@
 - [1.4 내장 전역 객체](./ch01/1_python_intro/1_4_builtin_objects.md)
 - [1.5 타입 힌트 심화: 값과 타입의 경계](./ch01/1_python_intro/1_5_type_hint_deep_dive.md)
 - [1.6 내장 전역 함수](./ch01/1_python_intro/1_6_builtin_functions.md)
+- [1.7 함수형 프로그래밍 요소](./ch01/1_python_intro/1_7_functional_programming.md)
 
 ## 2. 데이터 과학 관련 모듈
 
