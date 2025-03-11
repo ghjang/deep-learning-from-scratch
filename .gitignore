@@ -19,3 +19,4 @@ manim.cfg
 # .handy-man folder
 .handy-man/
 *.pkl
+*_log.json
