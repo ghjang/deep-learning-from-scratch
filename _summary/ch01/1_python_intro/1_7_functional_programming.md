@@ -475,4 +475,153 @@ print(f"c1: {c1}, c2: {c2}")  # c1: 5, c2: 8 - c1은 변경되지 않고 새 객
 
 함수형 프로그래밍 원칙을 따르더라도 파이썬의 멀티패러다임 특성을 활용하는 것이 최선의 접근법이다.
 
+## 1.7.5 파이썬의 가변성(Mutability)과 불변성(Immutability)
+
+함수형 프로그래밍에서는 불변성(immutability)이 핵심 개념 중 하나이다. 파이썬에서는 객체의 가변성 여부가 함수형 프로그래밍 구현에 중요한 영향을 미친다.
+
+### a. 가변 타입과 불변 타입
+
+파이썬의 데이터 타입은 '가변(mutable)'과 '불변(immutable)'으로 나뉜다:
+
+- **불변(Immutable) 타입**: 한번 생성되면 내용을 변경할 수 없는 객체
+  - int, float, bool, str, tuple, frozenset, bytes
+  
+- **가변(Mutable) 타입**: 내용을 자유롭게 변경할 수 있는 객체
+  - list, dict, set, bytearray, 사용자 정의 클래스
+
+불변 객체는 내용을 변경하는 연산을 수행하면 새로운 객체가 생성된다:
+
+```python
+# 문자열(불변 객체) 연산
+s = "hello"
+id_before = id(s)  # 객체의 메모리 주소
+  
+s = s + " world"   # 새로운 객체 생성
+id_after = id(s)
+  
+print(id_before == id_after)  # False - 다른 객체임
+```
+
+반면 가변 객체는 내용 변경 시 같은 객체가 유지된다:
+
+```python
+# 리스트(가변 객체) 연산
+lst = [1, 2, 3]
+id_before = id(lst)
+  
+lst.append(4)  # 같은 객체의 내용 수정
+id_after = id(lst)
+  
+print(id_before == id_after)  # True - 동일한 객체임
+```
+
+### b. 함수형 프로그래밍과 불변성
+
+함수형 프로그래밍에서는 상태 변경을 피하고 순수 함수를 선호한다. 파이썬에서 불변성을 활용한 함수형 스타일 코드는 다음과 같다:
+
+```python
+# 불변성을 활용한 함수형 스타일
+def add_to_list(lst, item):
+    """기존 리스트를 변경하지 않고 새 항목을 추가한 새 리스트를 반환"""
+    return lst + [item]  # 새 리스트 생성
+
+original = [1, 2, 3]
+new_list = add_to_list(original, 4)
+print(original)  # [1, 2, 3] - 변경되지 않음
+print(new_list)  # [1, 2, 3, 4] - 새 리스트
+```
+
+### c. 가변성이 함수 호출과 변수 할당에 미치는 영향
+
+불변 객체와 가변 객체는 함수 호출 시 매우 다르게 동작한다:
+
+```python
+def modify_value(x):
+    x = x + 1  # 새 객체 생성
+    return x
+
+def modify_list(lst):
+    lst.append(4)  # 원본 객체 수정
+  
+num = 10
+result = modify_value(num)
+print(num)     # 10 (원본 변경 없음)
+print(result)  # 11
+  
+numbers = [1, 2, 3]
+modify_list(numbers)
+print(numbers)  # [1, 2, 3, 4] (원본이 변경됨)
+```
+
+### d. 불변성(immutability)의 장점
+
+함수형 프로그래밍에서 불변성을 선호하는 이유는 다음과 같다:
+
+1. **스레드 안전성**: 여러 스레드가 동일한 객체에 접근해도 값이 변하지 않음
+2. **예측 가능성**: 코드의 다른 부분에서 객체를 변경하지 않을 것이라는 보장
+3. **해시 가능**: 딕셔너리 키나 집합의 요소로 사용 가능
+4. **성능상 이점**: 불변 객체(예: 튜플)는 몇 가지 성능 최적화가 가능함
+
+```python
+# 성능 비교 예시
+import sys
+  
+# 메모리 사용량 비교
+tuple_ex = (1, 2, 3, 4, 5)
+list_ex = [1, 2, 3, 4, 5]
+  
+print(f"튜플 메모리: {sys.getsizeof(tuple_ex)} 바이트")  # 일반적으로 더 작음
+print(f"리스트 메모리: {sys.getsizeof(list_ex)} 바이트") # 크기 조정을 위한 추가 공간 필요
+```
+
+### e. 함수형 프로그래밍을 위한 불변 데이터 구조
+
+함수형 프로그래밍에서는 불변 데이터 구조를 선호한다:
+
+```python
+# 불변 데이터로 상태 관리하기
+def update_counter(counter_dict, key):
+    """카운터 딕셔너리를 변경하지 않고 업데이트된 새 딕셔너리 반환"""
+    new_dict = counter_dict.copy()  # 얕은 복사
+    new_dict[key] = new_dict.get(key, 0) + 1
+    return new_dict
+
+counts = {}
+counts = update_counter(counts, 'apple')
+counts = update_counter(counts, 'banana')
+counts = update_counter(counts, 'apple')
+print(counts)  # {'apple': 2, 'banana': 1}
+
+# 불변 데이터 구조를 위한 라이브러리 (예: pyrsistent)
+# pip install pyrsistent
+from pyrsistent import pmap
+
+immutable_map = pmap({'a': 1, 'b': 2})
+updated_map = immutable_map.set('c', 3)
+
+print(immutable_map)  # pmap({'a': 1, 'b': 2})
+print(updated_map)    # pmap({'a': 1, 'b': 2, 'c': 3})
+```
+
+### f. 파이썬에서의 함수형 프로그래밍과 불변성 한계
+
+파이썬은 본질적으로 가변성을 허용하므로 완전한 함수형 프로그래밍에는 한계가 있다:
+
+```python
+# 불변성 강제하기 위한 방어적 프로그래밍
+def process_data(data):
+    """입력 데이터를 변경하지 않고 처리"""
+    # 입력이 가변 객체인 경우 방어적 복사
+    if isinstance(data, list):
+        data = data.copy()
+    elif isinstance(data, dict):
+        data = data.copy()
+    
+    # 이제 data를 안전하게 수정할 수 있음
+    # ... 처리 로직 ...
+    return result
+```
+
+불변성은 함수형 프로그래밍의 주요 원칙이지만, 파이썬의 멀티패러다임 특성을 고려하여 적절히 균형을 맞추는 것이 중요하다.
+
 > [목차로 돌아가기](../../README.md) | [이전: 내장 전역 함수](./1_6_builtin_functions.md)
