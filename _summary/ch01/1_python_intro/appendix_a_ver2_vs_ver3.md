@@ -371,14 +371,14 @@ standard_library.install_aliases()
 - `print()` 함수화
 - `range()` 이터레이터 동작
 - 정수 나눗셈 연산자 `/` 변경
-- 예외 구문 변경(as 키워드)
+- 예외 구문 변경(`as` 키워드)
 - 뷰와 이터레이터 기반 `dict` 메서드
 
 ### 파이썬 3.1 (2009-06)
 
 - `collections.OrderedDict` 추가
 - 수 천 단위 구분자 `1_000_000` 지원
-- 중첩된 with 구문
+- 중첩된 `with` 구문
 - `importlib` 패키지
 
 ### 파이썬 3.2 (2011-02)
