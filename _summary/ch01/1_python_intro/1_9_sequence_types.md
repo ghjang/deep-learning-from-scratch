@@ -1,6 +1,6 @@
 # 1.9 시퀀스 타입과 슬라이싱
 
-> [목차로 돌아가기](../../README.md) | [이전: 기본 데이터 타입](./1_8_basic_data_types.md) | [다음: 파이썬 2와 3의 주요 차이점](./a_1_ver2_vs_ver3.md)
+> [목차로 돌아가기](../../README.md) | [이전: 기본 데이터 타입](./1_8_basic_data_types.md) | [다음: 파이썬 2와 3의 주요 차이점](./appendix_a_ver2_vs_ver3.md)
 
 ## 1.9.1 시퀀스 타입
 
@@ -412,4 +412,4 @@
   print(list(range(10, 0, -1)))  # [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
   ```
 
-> [목차로 돌아가기](../../README.md) | [이전: 기본 데이터 타입](./1_8_basic_data_types.md) | [다음: 파이썬 2와 3의 주요 차이점](./a_1_ver2_vs_ver3.md)
+> [목차로 돌아가기](../../README.md) | [이전: 기본 데이터 타입](./1_8_basic_data_types.md) | [다음: 파이썬 2와 3의 주요 차이점](./appendix_a_ver2_vs_ver3.md)

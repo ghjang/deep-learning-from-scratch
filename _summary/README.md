@@ -12,7 +12,8 @@
 - [1.8 기본 데이터 타입](./ch01/1_python_intro/1_8_basic_data_types.md)
 - [1.9 시퀀스 타입과 슬라이싱](./ch01/1_python_intro/1_9_sequence_types.md)
 
-- [부록 A: 파이썬 2와 3의 주요 차이점](./ch01/1_python_intro/a_1_ver2_vs_ver3.md)
+- [부록 A: 파이썬 2와 3의 주요 차이점](./ch01/1_python_intro/appendix_a_ver2_vs_ver3.md)
+- [부록 B: 파이썬 Pickle 객체 직렬화](./ch01/1_python_intro/appendix_b_pickle.md)
 
 ## 2. 데이터 과학 관련 모듈
 
