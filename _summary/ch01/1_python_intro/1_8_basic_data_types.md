@@ -1,6 +1,6 @@
 # 1.8 기본 데이터 타입
 
-> [목차로 돌아가기](../../README.md) | [이전: 함수형 프로그래밍 요소](./1_7_functional_programming.md)
+> [목차로 돌아가기](../../README.md) | [이전: 함수형 프로그래밍 요소](./1_7_functional_programming.md) | [다음: 시퀀스 타입과 슬라이싱](./1_9_sequence_types.md)
 
 ## 1.8.1 가변성과 불변성
 
@@ -523,4 +523,4 @@ def process_data_legacy(text: str, count: int, settings: Dict[str, bool]) -> Lis
     pass
 ```
 
-> [목차로 돌아가기](../../README.md) | [이전: 함수형 프로그래밍 요소](./1_7_functional_programming.md)
+> [목차로 돌아가기](../../README.md) | [이전: 함수형 프로그래밍 요소](./1_7_functional_programming.md) | [다음: 시퀀스 타입과 슬라이싱](./1_9_sequence_types.md)

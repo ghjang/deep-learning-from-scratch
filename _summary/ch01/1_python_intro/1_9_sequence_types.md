@@ -1,8 +1,8 @@
-# 1.4 시퀀스 타입과 슬라이싱
+# 1.9 시퀀스 타입과 슬라이싱
 
-> [목차로 돌아가기](../../README.md) | [이전: 가변(Mutable)과 불변(Immutable) 타입](./1_3_mutability.md) | [다음: 객체 지향 특성](./1_5_oop.md)
+> [목차로 돌아가기](../../README.md) | [이전: 기본 데이터 타입](./1_8_basic_data_types.md)
 
-## 1.4.1 시퀀스 타입
+## 1.9.1 시퀀스 타입
 
 * __파이썬의 '시퀀스 타입'은 순서가 있는 데이터 컬렉션이다.__
 
@@ -87,7 +87,7 @@
      print(sorted("hello"))    # ['e', 'h', 'l', 'l', 'o']
      ```
 
-## 1.4.2 슬라이싱
+## 1.9.2 슬라이싱
 
 * __'슬라이싱'은 시퀀스의 일부분을 추출하는 강력한 기능이다.__
 
@@ -182,4 +182,234 @@
   print(deep_copy)      # [1, 2, [33, 4]]
   ```
 
-> [목차로 돌아가기](../../README.md) | [이전: 가변(Mutable)과 불변(Immutable) 타입](./1_3_mutability.md) | [다음: 객체 지향 특성](./1_5_oop.md)
+## 1.9.3 시퀀스 언패킹
+
+* __시퀀스 언패킹은 시퀀스의 요소들을 개별 변수에 할당하는 강력한 기능이다.__
+
+  ```python
+  # 기본 언패킹
+  a, b, c = [1, 2, 3]
+  print(a, b, c)  # 1 2 3
+  
+  # 더 많은 값 무시하기
+  first, *rest = [1, 2, 3, 4, 5]
+  print(first, rest)  # 1 [2, 3, 4, 5]
+  
+  # 중간 값 추출
+  first, *middle, last = [1, 2, 3, 4, 5]
+  print(first, middle, last)  # 1 [2, 3, 4] 5
+  
+  # 함수 인자로 활용
+  def add_multiply(a, b, c):
+      return a + b, b * c
+  
+  values = [2, 3, 4]
+  sum_result, product_result = add_multiply(*values)
+  print(sum_result, product_result)  # 5 12
+  ```
+
+  언패킹은 코드를 더 간결하고 표현력 있게 만들며, 특히 함수 호출과 결과 처리에 유용하다.
+
+## 1.9.4 바이트 타입 심화
+
+* __바이트 타입(`bytes`와 `bytearray`)은 바이너리 데이터를 처리하는 시퀀스 타입이다.__
+
+  ### a. 바이트 객체 생성
+
+  ```python
+  # 다양한 bytes 생성 방법
+  b1 = bytes([65, 66, 67])          # ASCII 값으로 생성
+  b2 = bytes(b"ABC")                # 리터럴 문법
+  b3 = bytes("안녕", encoding="utf-8")  # 문자열로부터 인코딩
+  
+  print(b1)  # b'ABC'
+  print(b3)  # b'\xec\x95\x88\xeb\x85\x95' (UTF-8로 인코딩된 '안녕')
+  ```
+
+  ### b. 바이트 시퀀스 연산
+
+  ```python
+  # 바이트 시퀀스 인덱싱과 슬라이싱
+  b = bytes([104, 101, 108, 108, 111])  # b'hello'
+  print(b[0])      # 104 (정수값 반환)
+  print(b[1:3])    # b'el' (슬라이스는 바이트 객체 반환)
+  print(list(b))   # [104, 101, 108, 108, 111] (정수 리스트로 변환)
+  
+  # 연결 및 반복
+  b1 = b'Hello, '
+  b2 = b'World!'
+  print(b1 + b2)   # b'Hello, World!'
+  print(b'-' * 5)  # b'-----'
+  ```
+
+  ### c. 수정 가능한 `bytearray`
+
+  ```python
+  # bytearray 생성
+  ba = bytearray([65, 66, 67])  # bytearray(b'ABC')
+  
+  # 요소 수정
+  ba[0] = 68  # ASCII 'D'
+  print(ba)   # bytearray(b'DBC')
+  
+  # 메서드 사용
+  ba.append(69)  # ASCII 'E'
+  ba.extend(b'FG')
+  print(ba)   # bytearray(b'DBCEFG')
+  
+  # bytes와 bytearray 변환
+  frozen = bytes(ba)    # 불변 복사본 생성
+  mutable = bytearray(b'hello')  # 가변 복사본 생성
+  ```
+  
+  ### d. 인코딩과 디코딩
+
+  ```python
+  # 문자열 인코딩 (string → bytes)
+  text = "안녕하세요"
+  utf8_bytes = text.encode('utf-8')
+  print(utf8_bytes)  # b'\xec\x95\x88\xeb\x85\x95\xed\x95\x98\xec\x84\xb8\xec\x9a\x94'
+  print(len(text))   # 5 (문자 수)
+  print(len(utf8_bytes))  # 15 (바이트 수, UTF-8에서 한글은 문자당 3바이트)
+  
+  # 다양한 인코딩
+  cp949_bytes = text.encode('cp949')  # 윈도우 한글 인코딩
+  print(cp949_bytes)  # b'\xbe\xc8\xb3\xe7\xc7\xcf\xbc\xbc\xbf\xe4'
+  
+  # 바이트 디코딩 (bytes → string)
+  decoded = utf8_bytes.decode('utf-8')
+  print(decoded)  # '안녕하세요'
+  
+  # 오류 처리
+  invalid_bytes = b'\xff\xfe\xfd'  # 유효하지 않은 UTF-8 시퀀스
+  try:
+      decoded = invalid_bytes.decode('utf-8')
+  except UnicodeDecodeError:
+      print("디코딩 오류 발생")
+      
+  # 오류 처리 옵션 지정
+  decoded = invalid_bytes.decode('utf-8', errors='replace')
+  print(decoded)  # '���' (유효하지 않은 문자는 �로 대체)
+  ```
+  
+  ### e. 바이트 타입의 활용 사례
+  
+  ```python
+  # 파일 입출력
+  with open('image.jpg', 'rb') as f:
+      data = f.read()  # bytes 객체로 읽음
+      print(type(data))  # <class 'bytes'>
+      print(f"파일 크기: {len(data)} 바이트")
+  
+  # 네트워크 통신
+  import socket
+  
+  # 소켓 통신에서는 바이트 타입으로 데이터 송수신
+  msg = b"Hello, server!"
+  # client_socket.send(msg)  # 실제 코드에서는 연결된 소켓 필요
+  
+  # 해시 함수와 암호화
+  import hashlib
+  data = b"sensitive data"
+  hash_value = hashlib.sha256(data).hexdigest()
+  print(f"SHA-256 해시: {hash_value}")
+  ```
+
+  바이트 타입은 네트워크 프로그래밍, 파일 조작, 암호화, 이미지 처리 등의 바이너리 데이터를 다룰 때 필수적이다.
+
+## 1.9.5 시퀀스 타입별 특화 기능
+
+* __각 시퀀스 타입은 고유한 특징과 메서드를 가진다.__
+
+  ### a. 문자열(str) 고유 메서드
+  
+  ```python
+  text = "  Hello, World!  "
+  
+  # 대소문자 변환
+  print(text.upper())       # "  HELLO, WORLD!  "
+  print(text.lower())       # "  hello, world!  "
+  print(text.title())       # "  Hello, World!  "
+  
+  # 공백 처리
+  print(text.strip())       # "Hello, World!" (앞뒤 공백 제거)
+  print(text.lstrip())      # "Hello, World!  " (왼쪽 공백만 제거)
+  print(text.rstrip())      # "  Hello, World!" (오른쪽 공백만 제거)
+  
+  # 검색과 대체
+  print(text.find("World"))  # 9 (위치 반환, 없으면 -1)
+  print(text.replace("World", "Python"))  # "  Hello, Python!  "
+  
+  # 분할과 결합
+  parts = "apple,banana,orange".split(",")
+  print(parts)              # ['apple', 'banana', 'orange']
+  print("|".join(parts))    # "apple|banana|orange"
+  ```
+
+  ### b. 리스트(list) 고유 메서드
+  
+  ```python
+  numbers = [1, 2, 3, 4]
+  
+  # 요소 추가
+  numbers.append(5)    # [1, 2, 3, 4, 5]
+  numbers.insert(0, 0) # [0, 1, 2, 3, 4, 5]
+  numbers.extend([6, 7])  # [0, 1, 2, 3, 4, 5, 6, 7]
+  
+  # 요소 제거
+  numbers.remove(0)    # [1, 2, 3, 4, 5, 6, 7]
+  popped = numbers.pop()  # 7, numbers = [1, 2, 3, 4, 5, 6]
+  popped_idx = numbers.pop(0)  # 1, numbers = [2, 3, 4, 5, 6]
+  
+  # 정렬 및 역순
+  numbers.sort()       # [2, 3, 4, 5, 6] (원본 변경)
+  numbers.reverse()    # [6, 5, 4, 3, 2] (원본 변경)
+  ```
+
+  ### c. 튜플(tuple)의 특징과 활용
+  
+  ```python
+  # 튜플은 불변이지만 효율적인 데이터 구조
+  point = (10, 20)
+  
+  # 튜플 언패킹
+  x, y = point
+  
+  # 튜플을 반환하는 함수
+  def get_dimensions():
+      return (1920, 1080)
+  
+  width, height = get_dimensions()
+  print(f"해상도: {width}x{height}")
+  
+  # 네임드 튜플 (가독성 향상)
+  from collections import namedtuple
+  
+  Point = namedtuple('Point', ['x', 'y'])
+  p = Point(10, 20)
+  print(p.x, p.y)  # 10 20
+  print(p[0], p[1])  # 10 20 (인덱스로도 접근 가능)
+  ```
+
+  ### d. range의 특징과 활용
+  
+  ```python
+  # range는 메모리 효율적인 시퀀스 (실제 리스트를 생성하지 않음)
+  r = range(1, 10000000)  # 메모리에 천만 개 정수를 저장하지 않음
+  print(f"크기: {r.stop - r.start}")  # 크기: 9999999
+  
+  # range 속성
+  r = range(5, 20, 3)
+  print(r.start)  # 5
+  print(r.stop)   # 20
+  print(r.step)   # 3
+  
+  # 리스트로 변환하면 실제 값이 모두 생성됨
+  print(list(range(5)))  # [0, 1, 2, 3, 4]
+  print(list(range(2, 10, 2)))  # [2, 4, 6, 8]
+  
+  # 음수 스텝
+  print(list(range(10, 0, -1)))  # [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+  ```
+
+> [목차로 돌아가기](../../README.md) | [이전: 기본 데이터 타입](./1_8_basic_data_types.md)
