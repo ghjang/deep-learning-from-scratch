@@ -10,7 +10,7 @@
 - [1.6 내장 전역 함수](./ch01/1_python_intro/1_6_builtin_functions.md)
 - [1.7 함수형 프로그래밍 요소](./ch01/1_python_intro/1_7_functional_programming.md)
 - [1.8 기본 데이터 타입](./ch01/1_python_intro/1_8_basic_data_types.md)
-- [1.9 시퀀스 타입과 슬라이싱](./ch01/1_python_intro/1_9_sequence_types.md)
+- [1.9 시퀀스 타입과 데이터 조작](./ch01/1_python_intro/1_9_sequence_types.md)
 
 - [부록 A: 파이썬 2와 3의 주요 차이점](./ch01/1_python_intro/appendix_a_ver2_vs_ver3.md)
 - [부록 B: 파이썬 Pickle 객체 직렬화](./ch01/1_python_intro/appendix_b_pickle.md)
@@ -21,5 +21,5 @@
 - [2.2 머신러닝 라이브러리 개요](./ch01/2_modules_related_to_ds/2_2_machine_learning_libraries.md)
 - [2.3 딥러닝 라이브러리 개요](./ch01/2_modules_related_to_ds/2_3_deep_learning_libraries.md)
 
-- [2.4 numpy 인트로](./ch01/2_modules_related_to_ds/2_4_numpy_intro.md)
+- [2.4 NumPy 인트로](./ch01/2_modules_related_to_ds/2_4_numpy_intro.md)
 - [2.5 matplotlib 인트로](./ch01/2_modules_related_to_ds/2_5_matplotlib_intro.md)

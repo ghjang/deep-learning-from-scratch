@@ -1,6 +1,6 @@
 # 2.3 딥러닝 라이브러리 개요
 
-> [목차로 돌아가기](../../README.md) | [이전: 머신러닝 라이브러리 개요](./2_2_machine_learning_libraries.md) | [다음: numpy 인트로](./2_4_numpy_intro.md)
+> [목차로 돌아가기](../../README.md) | [이전: 머신러닝 라이브러리 개요](./2_2_machine_learning_libraries.md) | [다음: NumPy 인트로](./2_4_numpy_intro.md)
 
 ## 2.3.1 TensorFlow
 
@@ -33,4 +33,4 @@
 * 몬트리올 대학에서 개발되었으며, 다차원 배열을 효율적으로 처리하는 라이브러리이다.
 
 ---
-> [목차로 돌아가기](../../README.md) | [이전: 머신러닝 라이브러리 개요](./2_2_machine_learning_libraries.md) | [다음: numpy 인트로](./2_4_numpy_intro.md)
+> [목차로 돌아가기](../../README.md) | [이전: 머신러닝 라이브러리 개요](./2_2_machine_learning_libraries.md) | [다음: NumPy 인트로](./2_4_numpy_intro.md)
