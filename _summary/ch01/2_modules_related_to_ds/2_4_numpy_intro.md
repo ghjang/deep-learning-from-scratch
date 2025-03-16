@@ -74,7 +74,7 @@ new_type = arr.astype(float)  # 배열의 데이터 타입을 float로 변환
 
 ### reshape 메서드와 -1 인수 활용
 
-NumPy의 reshape 메서드는 배열 구조를 유연하게 변경할 수 있는 강력한 도구다. 특히 `-1` 인수를 사용하면 자동 차원 계산이 가능하다.
+NumPy의 reshape 메서드는 배열 구조를 유연하게 변경할 수 있는 강력한 도구다. 특히 `-1` 인수를 사용하면 자동 차원 계산이 가능하다. 다양한 차원의 배열 형태 변환에 대한 자세한 내용은 [텐서 개념](#249-텐서와-numpy의-다차원-배열)을 참조하라.
 
 ```python
 arr = np.array([[1, 2, 3], [4, 5, 6]])  # 2x3 배열
@@ -153,7 +153,7 @@ batch_features = features.reshape(50, 20, 28, 28)  # 20개씩 50개 배치로 �
 
 ### 파이썬 슬라이스 객체 이해하기
 
-NumPy의 다차원 슬라이싱을 이해하기 전에, 파이썬의 내장 `slice` 타입과 대괄호(`[]`) 표기법의 내부 동작에 대해 알아보자:
+NumPy의 다차원 슬라이싱을 이해하기 전에, 파이썬의 내장 `slice` 타입과 대괄호(`[]`) 표기법의 내부 동작에 대해 알아보자. 기본 파이썬 슬라이싱에 대한 자세한 내용은 [1.9 시퀀스 타입과 데이터 조작](../1_python_intro/1_9_sequence_types.md#192-슬라이싱) 섹션을 참조하라:
 
 ```python
 # slice 객체 직접 생성
@@ -566,6 +566,212 @@ print(np.linalg.det(A))    # 5.0 (행렬식)
 print(np.linalg.inv(A))    # [[ 0.4 -0.2]
                            #  [-0.2  0.6]] (역행렬)
 ```
+
+## 2.4.9 텐서와 NumPy의 다차원 배열
+
+'**텐서(tensor)**'는 벡터와 행렬을 일반화한 다차원 데이터 구조로, 임의의 차원 수를 가질 수 있다. 텐서를 다룰 때 [reshape 메서드](#reshape-메서드와--1-인수-활용)와 [전치 연산](#2410-전치행렬transpose과-메모리-효율성)이 자주 사용된다:
+
+- 0차원 텐서: 스칼라 (단일 값)
+- 1차원 텐서: 벡터 (값의 배열)
+- 2차원 텐서: 행렬 (값의 2D 격자)
+- 3차원 텐서: 큐브 (값의 3D 블록) - 예: 이미지 스택, 시공간 데이터
+- 4차원 이상 텐서: 고차원 데이터 - 예: 배치 이미지 데이터, 시공간 시계열
+
+NumPy의 `ndarray`는 수학적 텐서 개념을 컴퓨터 과학에 구현한 것으로, 임의 차원의 텐서를 효율적으로 다룰 수 있다:
+
+```python
+# NumPy로 다양한 차원의 텐서 표현
+scalar = np.array(5)                  # 0차원 텐서 (스칼라)
+vector = np.array([1, 2, 3])          # 1차원 텐서 (벡터)
+matrix = np.array([[1, 2], [3, 4]])   # 2차원 텐서 (행렬)
+cube = np.ones((2, 3, 4))             # 3차원 텐서
+tesseract = np.zeros((2, 3, 4, 5))    # 4차원 텐서
+
+print(f"스칼라 차원: {scalar.ndim}, 형태: {scalar.shape}")
+print(f"벡터 차원: {vector.ndim}, 형태: {vector.shape}")
+print(f"행렬 차원: {matrix.ndim}, 형태: {matrix.shape}")
+print(f"3차원 텐서 차원: {cube.ndim}, 형태: {cube.shape}")
+print(f"4차원 텐서 차원: {tesseract.ndim}, 형태: {tesseract.shape}")
+```
+
+텐서의 중요한 특성은 각 차원이 서로 독립적이며, 각각의 차원에서 연산을 수행하거나 조작할 수 있다는 점이다. 특히 딥러닝에서는 신경망의 가중치, 활성화 값, 그래디언트 등이 모두 텐서로 표현된다.
+
+## 2.4.10 전치행렬(Transpose)과 메모리 효율성
+
+NumPy에서는 행렬의 전치를 매우 간단하게 계산할 수 있다:
+
+```python
+# 행렬 전치 계산 방법
+a = np.array([[1, 2, 3], [4, 5, 6]])
+print(a)
+# [[1 2 3]
+#  [4 5 6]]
+
+# 1. .T 속성 사용 (가장 일반적인 방법)
+a_t = a.T
+print(a_t)
+# [[1 4]
+#  [2 5]
+#  [3 6]]
+
+# 2. transpose() 함수 사용
+a_t2 = np.transpose(a)
+print(a_t2)  # a.T와 동일 결과
+
+# 3. 다차원 배열의 특정 축만 전치
+b = np.ones((2, 3, 4))  # 2x3x4 배열
+b_t = np.transpose(b, axes=(1, 0, 2))  # 3x2x4로 변환 (첫 두 차원만 교환)
+print(b_t.shape)  # (3, 2, 4)
+```
+
+### N차원 배열에서의 전치(transpose) 개념
+
+2차원 행렬에서 전치는 단순히 행과 열을 교환하는 것이지만, 3차원 이상의 텐서에서 전치는 '차원 순서의 재배열'을 의미한다. 이러한 고차원 데이터 조작에 앞서 [텐서의 개념](#249-텐서와-numpy의-다차원-배열)을 이해하는 것이 중요하다:
+
+```python
+# 3차원 배열 (2x3x4): 2개의 3행 4열 행렬 스택
+tensor_3d = np.arange(24).reshape(2, 3, 4)
+print("원본 형태:", tensor_3d.shape)  # (2, 3, 4)
+print(tensor_3d)
+
+# 기본 전치 (.T): 차원 순서를 완전히 뒤집음
+# (2,3,4) -> (4,3,2)
+transposed = tensor_3d.T
+print("완전 전치 후 형태:", transposed.shape)  # (4, 3, 2)
+
+# 특정 축만 교환하기
+# 첫 번째와 두 번째 차원 교환: (2,3,4) -> (3,2,4)
+trans_0_1 = np.transpose(tensor_3d, axes=(1, 0, 2))
+print("축 0과 1 교환 후 형태:", trans_0_1.shape)  # (3, 2, 4)
+
+# 시각적 이해를 위한 예시:
+simple_tensor = np.array([
+    [[1, 2], [3, 4], [5, 6]],       # 1층: 3x2 행렬
+    [[7, 8], [9, 10], [11, 12]]     # 2층: 3x2 행렬
+])  # 형태: (2, 3, 2) - 2개 층, 각 층은 3행 2열
+
+print("원본 텐서 (2, 3, 2):")
+print(simple_tensor)
+
+# 축 0과 1을 교환: 층과 행을 교환
+# (2층, 3행, 2열) -> (3층, 2행, 2열)
+swapped_0_1 = np.transpose(simple_tensor, (1, 0, 2))
+print("\n축 0과 1 교환 후 (3, 2, 2):")
+print(swapped_0_1)
+
+# 축 1과 2를 교환: 행과 열을 교환
+# (2층, 3행, 2열) -> (2층, 2행, 3열)
+swapped_1_2 = np.transpose(simple_tensor, (0, 2, 1))
+print("\n축 1과 2 교환 후 (2, 2, 3):")
+print(swapped_1_2)
+```
+
+#### 일반화된 전치 개념
+
+N차원 배열에서 전치는 다음과 같이 일반화된다:
+
+1. **완전 전치**: 모든 차원의 순서를 뒤집는다 (`.T` 속성)
+   - 예: (d0, d1, d2, ..., dn) → (dn, ..., d2, d1, d0)
+
+2. **부분 전치**: 지정된 축(차원) 간의 순서만 교환한다 (`transpose()` 함수)
+   - 예: (d0, d1, d2, d3) → (d0, d2, d1, d3) (축 1과 2를 교환)
+
+3. **임의 차원 재배열**: 원하는 순서로 차원을 완전히 재배열한다 (`transpose()` 함수)
+   - 예: (d0, d1, d2, d3) → (d3, d1, d0, d2)
+
+이러한 다차원 전치 연산은 이미지 처리, 신경망의 텐서 조작, 다차원 데이터 분석 등 다양한 영역에서 활용된다:
+
+```python
+# 4차원 예시: 배치 이미지 데이터 변환 (머신러닝에서 흔히 사용)
+# (배치 크기, 높이, 너비, 채널) -> (배치 크기, 채널, 높이, 너비)
+batch_images = np.random.rand(32, 128, 128, 3)  # 32장의 128x128 RGB 이미지
+print("원본 형태:", batch_images.shape)  # (32, 128, 128, 3)
+
+# PyTorch 형식으로 변환 (채널 우선)
+pytorch_format = np.transpose(batch_images, (0, 3, 1, 2))
+print("PyTorch 형태:", pytorch_format.shape)  # (32, 3, 128, 128)
+```
+
+#### 선형대수학적 의미
+
+수학적으로, N차원 텐서의 전치는 텐서 곱 연산의 순서를 변경하는 것과 관련이 있다:
+
+- 2차원 행렬 `A`에서 <code>A<sup>T</sup><sub>ij</sub> = A<sub>ji</sub></code>
+- 3차원 텐서 `T`에서 <code>transpose(T, (1, 0, 2))<sub>ijk</sub> = T<sub>jik</sub></code>
+
+고차원 텐서에서는 이렇게 인덱스의 순서를 교환하는 것이 곧 차원 간의 '역할'을 교환하는 것을 의미한다.
+
+선형대수학에서 이런 고차원 전치 연산은 다중선형 매핑의 성질을 변형하거나, 텐서의 축약(contraction) 연산 순서를 조정하는 데 사용된다.
+
+#### 전치행렬의 메모리 레이아웃과 성능 영향
+
+NumPy에서 전치 연산은 데이터를 물리적으로 재배치하지 않고 **뷰(view)를 생성**하는 방식으로 동작한다. 이는 메모리 사용을 최소화하지만, 접근 패턴에 영향을 미친다:
+
+```python
+large_matrix = np.random.rand(1000, 1000)  # 큰 행렬 생성
+large_transpose = large_matrix.T  # 전치행렬 (뷰)
+
+# 메모리 레이아웃 확인
+print(f"원본 행렬 스트라이드: {large_matrix.strides}")  # 예: (8000, 8) 바이트
+print(f"전치 행렬 스트라이드: {large_transpose.strides}")  # 예: (8, 8000) 바이트
+
+# 원본과 전치행렬은 동일한 메모리를 공유한다
+large_matrix[0, 0] = 99
+print(large_transpose[0, 0])  # 99 (동일 메모리 위치 참조)
+```
+
+**행 기반 vs 열 기반 메모리 접근 효율성:**
+
+1. **메모리 레이아웃**: NumPy는 기본적으로 C-style 행 기반(row-major) 메모리 레이아웃을 사용한다. 즉, 같은 행의 요소들이 메모리에 연속적으로 저장된다.
+
+2. **캐시 효율성**: 같은 행의 요소들을 순차적으로 접근할 때 캐시 효율성이 높다. 전치행렬에서는 원래 배열의 열을 접근하므로 캐시 효율성이 감소할 수 있다.
+
+```python
+import time
+
+# 캐시 효율성 비교 실험
+large_matrix = np.random.rand(5000, 5000)
+large_transpose = large_matrix.T
+
+# 행 방향 합계 계산 시간 측정
+start = time.time()
+row_sums = np.sum(large_matrix, axis=1)  # 행 방향 합계
+row_time = time.time() - start
+
+# 열 방향 합계 계산 시간 측정 (전치행렬의 행 합계 = 원본의 열 합계)
+start = time.time()
+col_sums = np.sum(large_matrix, axis=0)  # 열 방향 합계
+col_time = time.time() - start
+
+print(f"행 방향 합계 시간: {row_time:.6f}초")
+print(f"열 방향 합계 시간: {col_time:.6f}초")
+# 일반적으로 행 방향이 더 빠름
+```
+
+#### 메모리 레이아웃 최적화 방법
+
+전치행렬의 성능이 중요한 경우, 메모리 레이아웃을 최적화할 수 있다:
+
+```python
+# 1. 연속적인 메모리 레이아웃으로 복사
+# 뷰가 아닌 새로운 배열이 생성되므로 메모리를 더 사용하지만 접근 속도가 향상된다
+contiguous_transpose = np.ascontiguousarray(large_matrix.T)
+print(f"최적화된 전치행렬 스트라이드: {contiguous_transpose.strides}")  # 예: (8, 40000) 바이트
+
+# 2. Fortran 스타일(열 우선) 배열 사용
+# 이 경우 전치행렬의 접근이 더 효율적이다
+f_matrix = np.asfortranarray(large_matrix)
+print(f"Fortran 배열 스트라이드: {f_matrix.strides}")  # 예: (8, 5000*8) 바이트
+print(f"Fortran 배열 전치 스트라이드: {f_matrix.T.strides}")  # 예: (5000*8, 8) 바이트
+```
+
+일반적인 권장 사항:
+
+- 배열을 한 번 전치하고 여러 번 접근할 경우: `np.ascontiguousarray(A.T)`로 복사본 생성
+- 전치행렬을 주로 사용할 경우: `np.asfortranarray()`로 열 우선 배열 사용
+- 단순 연산이나 임시 사용 시: `.T` 속성 사용
+
+이러한 최적화는 큰 행렬을 다루는 고성능 계산에서 중요하며, NumPy의 유연한 메모리 레이아웃 지원으로 다양한 상황에 맞게 최적화가 가능하다.
 
 ---
 > [목차로 돌아가기](../../README.md) | [이전: 딥러닝 라이브러리 개요](./2_3_deep_learning_libraries.md) | [다음: matplotlib 인트로](./2_5_matplotlib_intro.md)
