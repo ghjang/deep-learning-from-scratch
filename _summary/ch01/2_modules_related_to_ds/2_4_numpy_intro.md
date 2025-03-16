@@ -72,6 +72,83 @@ flattened = arr.flatten()     # [1 2 3 4 5 6]
 new_type = arr.astype(float)  # 배열의 데이터 타입을 float로 변환
 ```
 
+### reshape 메서드와 -1 인수 활용
+
+NumPy의 reshape 메서드는 배열 구조를 유연하게 변경할 수 있는 강력한 도구다. 특히 `-1` 인수를 사용하면 자동 차원 계산이 가능하다.
+
+```python
+arr = np.array([[1, 2, 3], [4, 5, 6]])  # 2x3 배열
+
+# reshape에서 -1 사용하기
+# -1은 "해당 차원의 크기를 자동으로 계산"을 의미함
+auto_reshaped = arr.reshape(-1)       # [1 2 3 4 5 6] - 1차원으로 평탄화
+auto_reshaped_2d = arr.reshape(3, -1) # [[1 2], [3 4], [5 6]] - 3행 ?열로 변환
+```
+
+#### -1 위치의 차원 크기 계산 방법
+
+`-1` 인수의 차원 크기는 다음 공식으로 자동 계산된다:
+
+```python
+# 계산 공식: -1 차원 크기 = 총 원소 수 / (다른 차원들의 크기의 곱)
+arr = np.arange(24)
+print(f"총 원소 수: {arr.size}")  # 총 원소 수: 24
+
+# 예시 1: reshape(6, -1)
+# -1 차원 크기 = 24 / 6 = 4
+print(arr.reshape(6, -1).shape)  # (6, 4)
+
+# 예시 2: reshape(2, 3, -1)
+# -1 차원 크기 = 24 / (2 × 3) = 4
+print(arr.reshape(2, 3, -1).shape)  # (2, 3, 4)
+
+# 예시 3: reshape(-1, 8)
+# -1 차원 크기 = 24 / 8 = 3
+print(arr.reshape(-1, 8).shape)  # (3, 8)
+```
+
+#### reshape 오류 케이스
+
+reshape 사용 시 발생할 수 있는 일반적인 오류들:
+
+```python
+# 1. 나누어 떨어지지 않는 경우
+try:
+    # 원소 24개를 5행으로 나누려면 각 행이 4.8개 원소를 가져야 함 - 불가능
+    result = arr.reshape(5, -1)
+except ValueError as e:
+    print(f"오류 발생: {e}")
+    # 출력: "오류 발생: cannot reshape array of size 24 into shape (5,newaxis)"
+
+# 2. -1을 여러 개 사용한 경우
+try:
+    # 두 개 이상의 차원을 -1로 지정할 수 없음
+    result = arr.reshape(-1, -1)
+except ValueError as e:
+    print(f"오류 발생: {e}")
+    # 출력: "오류 발생: can only specify one unknown dimension"
+
+# 3. 원소 수와 맞지 않는 reshape
+try:
+    # 24개 원소를 2×2×10 배열로 만들려면 40개 원소가 필요
+    result = arr.reshape(2, 2, 10)
+except ValueError as e:
+    print(f"오류 발생: {e}")
+    # 출력: "오류 발생: cannot reshape array of size 24 into shape (2,2,10)"
+```
+
+#### 실전 활용 예시
+
+```python
+# 이미지 데이터 처리
+image = np.random.random((100, 100, 3))  # 100x100 RGB 이미지
+image_flat = image.reshape(-1, 3)        # (10000, 3) - 각 픽셀을 행으로 변환
+
+# 배치 데이터 구성
+features = np.random.random((1000, 28, 28))  # 1000개 28x28 이미지
+batch_features = features.reshape(50, 20, 28, 28)  # 20개씩 50개 배치로 재구성
+```
+
 ## 2.4.2 배열 인덱싱과 슬라이싱
 
 ### 파이썬 슬라이스 객체 이해하기
