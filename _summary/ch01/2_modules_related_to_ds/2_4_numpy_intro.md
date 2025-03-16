@@ -24,7 +24,7 @@ conda install numpy
 
 ## 2.4.1 배열 생성 및 기본 조작
 
-NumPy의 핵심은 다차원 배열 객체인 `ndarray`다. 다양한 방법으로 배열을 생성할 수 있다:
+NumPy의 핵심은 다차원 배열 객체인 `ndarray`다. 다양한 방법으로 배열을 생성할 수 있다. 이러한 함수들은 '**전역 팩토리 함수**'로, `ndarray` 객체를 생성하는 데 사용된다:
 
 ```python
 import numpy as np
