@@ -20,6 +20,6 @@
 - [2.1 데이터 분석 라이브러리 개요](./ch01/2_modules_related_to_ds/2_1_data_analysis_libraries.md)
 - [2.2 머신러닝 라이브러리 개요](./ch01/2_modules_related_to_ds/2_2_machine_learning_libraries.md)
 - [2.3 딥러닝 라이브러리 개요](./ch01/2_modules_related_to_ds/2_3_deep_learning_libraries.md)
-
 - [2.4 NumPy 인트로](./ch01/2_modules_related_to_ds/2_4_numpy_intro.md)
-- [2.5 matplotlib 인트로](./ch01/2_modules_related_to_ds/2_5_matplotlib_intro.md)
+- [2.5 NumPy 심화](./ch01/2_modules_related_to_ds/2_5_numpy_deep_dive.md)
+- [2.6 matplotlib 인트로](./ch01/2_modules_related_to_ds/2_6_matplotlib_intro.md)
