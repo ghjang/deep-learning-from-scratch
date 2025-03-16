@@ -330,4 +330,5 @@ except NotImplementedError as e:
     print(f"오류: {e}")  # 오류: 이 메서드는 자식 클래스에서 구현해야 합니다
 ```
 
+---
 > [목차로 돌아가기](../../README.md) | [이전: 객체 시스템과 객체 지향 프로그래밍 지원](./1_3_oop_system.md) | [다음: 타입 힌트 심화: 값과 타입의 경계](./1_5_type_hint_deep_dive.md)

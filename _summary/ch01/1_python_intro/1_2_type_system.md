@@ -181,4 +181,5 @@ def calculate_something(x: int, y: int) -> ...:
     return x + y
 ```
 
+---
 > [목차로 돌아가기](../../README.md) | [이전: 파이썬 특유의 주요 문법](./1_1_wicked_syntaxes.md) | [다음: 객체 시스템과 객체 지향 프로그래밍 지원](./1_3_oop_system.md)
