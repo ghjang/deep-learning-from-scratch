@@ -870,7 +870,49 @@ except ValueError as e:
 
 ## 2.4.8 유용한 NumPy 함수
 
-NumPy는 다양한 수학 함수와 응용 함수들을 제공한다:
+NumPy는 다양한 유용한 함수를 제공한다. 여기서는 NumPy가 제공하는 함수의 특징과 주요 함수들을 살펴본다.
+
+### NumPy의 유니버설 함수 (Universal Functions, ufunc)
+
+NumPy의 핵심 기능 중 하나는 '유니버설 함수(Universal Functions, ufunc)'이다. ufunc는 배열의 각 요소에 대해 동일한 연산을 병렬적으로 수행하도록 최적화된 함수이다. 이러한 함수들은 다음과 같은 특징을 가진다:
+
+1. **C/Fortran으로 구현**: 내부적으로 저수준 언어로 작성되어 매우 빠른 속도로 동작
+2. **SIMD 명령어 활용**: CPU의 단일 명령 다중 데이터(SIMD) 기능을 활용하여 병렬 처리
+3. **메모리 캐시 최적화**: 데이터 접근 패턴이 메모리 캐시를 효율적으로 사용하도록 설계
+4. **멀티코어 활용**: 일부 함수는 여러 CPU 코어를 활용해 연산 병렬화
+
+ufunc는 전통적인 Python 루프보다 수십에서 수백 배 빠를 수 있으며, 특히 큰 배열에서 그 효과가 두드러진다:
+
+```python
+import numpy as np
+import time
+
+# 벡터화 성능 비교
+size = 10000000
+data = np.random.random(size)
+
+# 1. Python 루프 방식 (느림)
+start = time.time()
+result1 = [x**2 for x in data]
+python_time = time.time() - start
+
+# 2. NumPy ufunc 방식 (빠름)
+start = time.time()
+result2 = np.square(data)  # 또는 data**2
+numpy_time = time.time() - start
+
+print(f"Python 루프 시간: {python_time:.4f}초")
+print(f"NumPy ufunc 시간: {numpy_time:.4f}초")
+print(f"속도 향상: {python_time/numpy_time:.1f}배")
+```
+
+위 코드에서 NumPy의 ufunc는 일반 Python 루프보다 훨씬 빠르게 실행된다. 이런 성능 향상은 데이터 과학과 수치 연산 분야에서 NumPy가 필수적인 도구가 된 주요 이유 중 하나이다.
+
+아래 함수 요약표에 포함된 수많은 함수들 중 상당수(특히 수학 및 통계 함수 카테고리의 함수들)는 ufunc로 구현되어 있다. 이들 함수는 파이썬의 순수 구현보다 훨씬 빠른 성능을 제공하므로, 대용량 데이터 처리에 적극 활용하는 것이 좋다.
+
+### 자주 사용되는 NumPy 함수 개요 및 메서드 요약
+
+NumPy는 다양한 수학 함수와 응용 함수들을 제공한다. 간단한 예시를 통해 NumPy의 주요 함수들을 살펴보자:
 
 ```python
 a = np.array([-1, 2, -3, 4])
@@ -906,8 +948,6 @@ print(a[:, np.newaxis])   # [[1]
                          #  [2]
                          #  [3]] (새 축 추가)
 ```
-
-### 자주 사용되는 NumPy 함수 및 메서드 요약
 
 다음은 NumPy에서 가장 자주 사용되는 기본 함수와 메서드들의 요약표이다:
 

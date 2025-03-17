@@ -490,8 +490,52 @@ def custom_function(x):
 vectorized_func = np.vectorize(custom_function)
 result = vectorized_func(np.array([0.1, 0.6, 0.4, 0.8]))
 print(result)  # [0.01 0.216 0.16 0.512]
+```
 
-# 배열의 특정 축을 따라 함수 적용
+#### `np.vectorize`의 성능 특성 이해하기
+
+`np.vectorize` 함수는 이름과 달리 실제 **벡터화된 연산을 수행하지 않는다.** 이 함수는:
+
+1. **Python 루프 기반**: 내부적으로 Python `for` 루프를 사용하여 각 요소에 함수를 적용한다. 이는 Python의 [map 함수](../1_python_intro/1_6_builtin_functions.md#a-map---요소별-함수-적용)와 유사하다.
+2. **편의성 도구**: NumPy 배열에 임의의 Python 함수를 간편하게 적용하기 위한 문법적 편의 기능이다.
+3. **성능 저하**: 실제로는 NumPy의 진정한 벡터화 연산과 비교하여 상당한 성능 저하가 발생한다.
+
+성능이 중요한 경우, 다음 방법을 대신 사용하는 것이 좋다:
+
+- **진정한 유니버설 함수(ufunc) 사용**: `np.sin`, `np.exp`와 같은 내장 [ufunc](./2_4_numpy_intro.md#numpy의-유니버설-함수-universal-functions-ufunc) 활용
+- **넘파이 내장 함수 조합**: 내장 함수들을 조합하여 복잡한 연산 구현
+- **Numba JIT 컴파일러**: `@numba.vectorize` 데코레이터로 사용자 정의 유니버설 함수 생성
+- **Cython/C 확장**: 성능이 매우 중요한 경우 저수준 확장 모듈 작성
+
+```python
+# 예제: vectorize 성능 비교
+import time
+import numpy as np
+
+x = np.random.random(1000000)
+
+def slow_square(x):
+    return x**2
+
+# vectorize 사용 (느림)
+vectorized_square = np.vectorize(slow_square)
+start = time.time()
+result1 = vectorized_square(x)
+v_time = time.time() - start
+
+# 내장 ufunc 사용 (빠름)
+start = time.time()
+result2 = np.square(x)  # 또는 간단히 x**2
+u_time = time.time() - start
+
+print(f"vectorize 실행 시간: {v_time:.6f}초")
+print(f"내장 ufunc 실행 시간: {u_time:.6f}초")
+print(f"속도 차이: {v_time/u_time:.1f}배")
+```
+
+#### 배열의 특정 축을 따라 함수 적용
+
+```python
 def row_sum_and_mean(row):
     return np.sum(row), np.mean(row)
 
