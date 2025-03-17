@@ -1,6 +1,6 @@
 # 부록 B: 파이썬 Pickle 객체 직렬화
 
-> [목차로 돌아가기](../../README.md) | [이전: 파이썬 2와 3의 주요 차이점](./appendix_a_ver2_vs_ver3.md)
+> [목차로 돌아가기](../../README.md) | [이전: 파이썬 2와 3의 주요 차이점](./appendix_a_ver2_vs_ver3.md) | 다음: 파이썬 모듈 시스템](./appendix_c_module.md)
 
 ## B.1 Pickle이란?
 
@@ -354,4 +354,4 @@ print(deserialized[3] is deserialized)  # True: 순환 참조 유지됨
 pickle은 복잡한 데이터 구조와 객체를 효율적으로 저장하는 강력한 도구이지만, 보안과 호환성에 주의해야 한다. 특히 딥러닝에서는 모델의 가중치와 상태를 저장하는 데 널리 사용되므로 이해하고 적절하게 활용하는 것이 중요하다.
 
 ---
-> [목차로 돌아가기](../../README.md) | [이전: 파이썬 2와 3의 주요 차이점](./appendix_a_ver2_vs_ver3.md)
+> [목차로 돌아가기](../../README.md) | [이전: 파이썬 2와 3의 주요 차이점](./appendix_a_ver2_vs_ver3.md) | 다음: 파이썬 모듈 시스템](./appendix_c_module.md)

@@ -14,6 +14,7 @@
 
 - [부록 A: 파이썬 2와 3의 주요 차이점](./ch01/1_python_intro/appendix_a_ver2_vs_ver3.md)
 - [부록 B: 파이썬 Pickle 객체 직렬화](./ch01/1_python_intro/appendix_b_pickle.md)
+- [부록 C: 파이썬 모듈 시스템](./ch01/1_python_intro/appendix_c_module.md)
 
 ## 2. 데이터 과학 관련 모듈
 
