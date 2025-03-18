@@ -140,6 +140,8 @@ class OptimizerMixin(Generic[T]):
     _learning_rate: float
     _epochs: int
     _batch_size: int
+    _verbose: bool
+    _verbose_interval: int
 
     def __init__(self) -> None:
         """OptimizerMixin 초기화"""
@@ -155,6 +157,8 @@ class OptimizerMixin(Generic[T]):
         self._learning_rate = 0.01  # 기본 학습률
         self._epochs = 100  # 기본 에포크 수
         self._batch_size = 32  # 기본 배치 크기
+        self._verbose = True  # 기본 출력 여부
+        self._verbose_interval = 100  # 기본 출력 간격
 
     def optimizer(
         self, optimizer_type: OptimizerType = "gradient_descent", **kwargs
@@ -223,6 +227,22 @@ class OptimizerMixin(Generic[T]):
             자기 자신 (메서드 체이닝 지원)
         """
         self._batch_size = n
+        return self
+
+    def verbose(self, enabled: bool = True, interval: int = 10) -> Self:
+        """
+        학습 과정 출력 여부와 출력 간격을 설정합니다.
+
+        Args:
+            enabled: 학습 진행 상황 출력 여부 (기본값: True)
+            interval: 학습 상태를 출력할 에포크 간격 (기본값: 10)
+                     예: interval=10이면 10, 20, 30... 에포크마다 상태 출력
+
+        Returns:
+            자기 자신 (메서드 체이닝 지원)
+        """
+        self._verbose = enabled
+        self._verbose_interval = interval
         return self
 
     def compute_loss_gradients(
@@ -302,7 +322,6 @@ class OptimizerMixin(Generic[T]):
         self,
         x: NDArray,
         y: NDArray,
-        verbose: bool = True,
     ) -> list[float]:
         """
         모델을 훈련합니다. 배치 크기에 따른 경사 하강법을 사용합니다.
@@ -310,7 +329,6 @@ class OptimizerMixin(Generic[T]):
         Args:
             x: 전체 훈련 데이터 입력값. 형태: (샘플 수, 특성 수)
             y: 전체 훈련 데이터의 정답값. 형태: (샘플 수, 출력 크기)
-            verbose: 학습 진행 상황 출력 여부
 
         Returns:
             각 에포크별 손실값 리스트
@@ -326,7 +344,7 @@ class OptimizerMixin(Generic[T]):
         else:
             descent_type = "미니배치 경사 하강법(Mini-batch GD)"
 
-        if verbose:
+        if self._verbose:
             print(
                 f"학습 시작: {descent_type}, 배치 크기={min(self._batch_size, n_samples)}, 에포크={self._epochs}"
             )
@@ -350,7 +368,9 @@ class OptimizerMixin(Generic[T]):
 
             history.append(epoch_loss)
 
-            if verbose and (epoch % 10 == 0 or epoch == self._epochs - 1):
+            if self._verbose and (
+                epoch % self._verbose_interval == 0 or epoch == self._epochs - 1
+            ):
                 print(f"에포크 {epoch+1}/{self._epochs}, 손실: {epoch_loss:.6f}")
 
         return history

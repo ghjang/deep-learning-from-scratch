@@ -23,7 +23,7 @@ class Layer:
     ):
         self.output_size: int = output_size
         self.weights: NDArray | None = weights
-        self.biases: NDArray | None = None if biases is None else biases
+        self.biases: NDArray | None = biases  # 단순화된 초기화
         self.activation: ActivationFunction | None = activation
 
 
@@ -100,10 +100,8 @@ class NeuralNet(
             자기 자신 (메서드 체이닝 지원)
         """
         if len(self.layers) == 0:
-            # NOTE:
-            # '0번째 레이어'는 '입력 레이어'이다.
-            # 입력 레이어에 적용되는 'weights'와 'biases'의 '크기'는
-            # 추후 실제 입력 데이터가 제공될때 결정된다.
+            # 첫 번째 레이어 추가
+            # weights와 biases는 forward 메서드에서 '입력 데이터 크기'에 기반해 초기화됨
             self.layers.append(Layer(output_size))
         else:
             prev_size = self.layers[-1].output_size
@@ -158,17 +156,13 @@ class NeuralNet(
                 f"입력 데이터는 1차원 이상이어야 합니다. 현재 shape: {x.shape}"
             )
 
-        # 입력층 (첫 번째 레이어)은 계산 없이 통과
-        layer_input = x  # 각 레이어의 입력값
+        layer_output = x  # NOTE: x 자체가 입력층
 
-        # 두 번째 레이어부터 순방향 계산 수행
-        for i, layer in enumerate(self.layers):
-            if i == 0:
-                continue  # 첫 번째 레이어(입력층) 건너뛰기
-
+        # 첫 번째 레이어(첫 번째 은닉층)부터 순방향 계산 수행
+        for layer in self.layers:
             # 가중치와 편향이 없으면 초기화
             if layer.weights is None:
-                prev_size = layer_input.shape[1]
+                prev_size = layer_output.shape[1]
                 # 가중치 초기화 헬퍼 메서드 활용
                 layer.weights = self._initialize_weights(prev_size, layer.output_size)
 
@@ -176,13 +170,13 @@ class NeuralNet(
                 layer.biases = np.zeros(layer.output_size)
 
             # 선형 계산: z = x @ W + b
-            z = layer_input @ layer.weights + layer.biases
+            z = layer_output @ layer.weights + layer.biases
 
             # 활성화 함수 적용 (다음 레이어의 입력이 됨)
-            layer_input = z if layer.activation is None else layer.activation(z)
+            layer_output = z if layer.activation is None else layer.activation(z)
 
         # 최종 출력(다음 레이어의 입력) 반환
-        return layer_input
+        return layer_output
 
     def predict(self, x: NDArray) -> NDArray:
         """모델 예측을 수행합니다. 단일 샘플 또는 배치 처리를 지원합니다.
@@ -222,24 +216,31 @@ class NeuralNet(
         print("-" * 60)
 
         total_params = 0
+
+        # 입력층 표시 (첫 번째 레이어의 입력 크기 기준)
+        if self.layers and self.layers[0].weights is not None:
+            input_size = self.layers[0].weights.shape[0]
+            print(f"{'입력층':^10}{input_size:^15}{0:^15}{'없음':^20}")
+        else:
+            print(f"{'입력층':^10}{'알 수 없음':^15}{0:^15}{'없음':^20}")
+
+        # 각 레이어 표시 (모두 계산에 참여하는 레이어로 취급)
         for i, layer in enumerate(self.layers):
-            # 첫 번째 레이어는 입력층이므로 파라미터가 없음
-            if i == 0:
-                params = 0
-                act_name = "입력층"
+            weights_params = 0 if layer.weights is None else layer.weights.size
+            bias_params = 0 if layer.biases is None else layer.biases.size
+            params = weights_params + bias_params
+
+            # 활성화 함수 이름 확인
+            if layer.activation is None:
+                act_name = "없음"
             else:
-                weights_params = 0 if layer.weights is None else layer.weights.size
-                bias_params = 0 if layer.biases is None else layer.biases.size
-                params = weights_params + bias_params
-                # 활성화 함수 이름 가져오기
-                if layer.activation is None:
-                    act_name = "없음"
-                else:
-                    # 함수 이름 추출
-                    act_name = layer.activation.__name__
+                act_name = layer.activation.__name__
+
+            # 레이어 유형 결정 (마지막 레이어는 출력층, 나머지는 은닉층)
+            layer_type = "출력층" if i == len(self.layers) - 1 else f"은닉층 {i+1}"
 
             total_params += params
-            print(f"{i:^10}{layer.output_size:^15}{params:^15}{act_name:^20}")
+            print(f"{layer_type:^10}{layer.output_size:^15}{params:^15}{act_name:^20}")
 
         print("-" * 60)
         print(f"총 파라미터 수: {total_params:,}")
