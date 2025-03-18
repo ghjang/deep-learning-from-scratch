@@ -44,17 +44,17 @@ class SaveLoadMixin(Generic[T]):
 
             for i, layer in enumerate(model.layers):
                 # 레이어 정보 저장
-                save_dict[f"layer_{i}_output_size"] = layer["output_size"]
+                save_dict[f"layer_{i}_output_size"] = layer.output_size
 
                 # 가중치와 편향 저장
-                if layer["weights"] is not None:
-                    save_dict[f"layer_{i}_weights"] = layer["weights"]
+                if layer.weights is not None:
+                    save_dict[f"layer_{i}_weights"] = layer.weights
 
-                if layer["biases"] is not None:
-                    save_dict[f"layer_{i}_biases"] = layer["biases"]
+                if layer.biases is not None:
+                    save_dict[f"layer_{i}_biases"] = layer.biases
 
                 # 활성화 함수 이름 저장
-                activation_name = self._get_activation_name(layer["activation"])
+                activation_name = self._get_activation_name(layer.activation)
                 save_dict[f"layer_{i}_activation"] = activation_name
 
             # 레이어 수 저장
@@ -67,21 +67,21 @@ class SaveLoadMixin(Generic[T]):
             model_data = {"layers": []}
 
             for layer in model.layers:
-                layer_data = {"output_size": layer["output_size"]}
+                layer_data = {"output_size": layer.output_size}
 
                 # 가중치와 편향을 리스트로 변환
-                if layer["weights"] is not None:
-                    layer_data["weights"] = layer["weights"].tolist()
+                if layer.weights is not None:
+                    layer_data["weights"] = layer.weights.tolist()
                 else:
                     layer_data["weights"] = None
 
-                if layer["biases"] is not None:
-                    layer_data["biases"] = layer["biases"].tolist()
+                if layer.biases is not None:
+                    layer_data["biases"] = layer.biases.tolist()
                 else:
                     layer_data["biases"] = None
 
                 # 활성화 함수 이름 저장
-                activation_name = self._get_activation_name(layer["activation"])
+                activation_name = self._get_activation_name(layer.activation)
                 layer_data["activation"] = activation_name
                 model_data["layers"].append(layer_data)
 
@@ -130,16 +130,14 @@ class SaveLoadMixin(Generic[T]):
 
                 # 가중치와 편향 복원
                 if f"layer_{i}_weights" in data:
-                    current_layer["weights"] = data[f"layer_{i}_weights"]
+                    current_layer.weights = data[f"layer_{i}_weights"]
 
                 if f"layer_{i}_biases" in data:
-                    current_layer["biases"] = data[f"layer_{i}_biases"]
+                    current_layer.biases = data[f"layer_{i}_biases"]
 
                 # 활성화 함수 복원
                 activation_name = str(data[f"layer_{i}_activation"])
-                current_layer["activation"] = cls._get_activation_function(
-                    activation_name
-                )
+                current_layer.activation = cls._get_activation_function(activation_name)
 
             print(f"모델이 {filepath}에서 로드되었습니다. (NumPy 형식)")
             return model
@@ -158,16 +156,14 @@ class SaveLoadMixin(Generic[T]):
 
                 # 가중치와 편향이 None이 아닌 경우 설정
                 if layer_data["weights"] is not None:
-                    current_layer["weights"] = np.array(layer_data["weights"])
+                    current_layer.weights = np.array(layer_data["weights"])
 
                 if layer_data["biases"] is not None:
-                    current_layer["biases"] = np.array(layer_data["biases"])
+                    current_layer.biases = np.array(layer_data["biases"])
 
                 # 활성화 함수 설정
                 activation_name = layer_data["activation"]
-                current_layer["activation"] = cls._get_activation_function(
-                    activation_name
-                )
+                current_layer.activation = cls._get_activation_function(activation_name)
 
             print(f"모델이 {filepath}에서 로드되었습니다. (JSON 형식)")
             return model
@@ -182,33 +178,31 @@ class SaveLoadMixin(Generic[T]):
         """활성화 함수를 이름으로 변환합니다."""
         from activation import identity, sigmoid, relu, tanh, softmax
 
-        if activation_function is None:
-            return "none"
-        elif activation_function == identity:
-            return "identity"
-        elif activation_function == sigmoid:
-            return "sigmoid"
-        elif activation_function == relu:
-            return "relu"
-        elif activation_function == tanh:
-            return "tanh"
-        elif activation_function == softmax:
-            return "softmax"
-        return "none"
+        # 매핑 테이블을 사용해 코드 간결화
+        mapping = {
+            None: "none",
+            identity: "identity",
+            sigmoid: "sigmoid",
+            relu: "relu",
+            tanh: "tanh",
+            softmax: "softmax",
+        }
+
+        return mapping.get(activation_function, "none")
 
     @staticmethod
     def _get_activation_function(activation_name: str):
         """이름을 활성화 함수로 변환합니다."""
         from activation import identity, sigmoid, relu, tanh, softmax
 
-        if activation_name == "identity":
-            return identity
-        elif activation_name == "sigmoid":
-            return sigmoid
-        elif activation_name == "relu":
-            return relu
-        elif activation_name == "tanh":
-            return tanh
-        elif activation_name == "softmax":
-            return softmax
-        return None
+        # 매핑 테이블을 사용해 코드 간결화
+        mapping = {
+            "identity": identity,
+            "sigmoid": sigmoid,
+            "relu": relu,
+            "tanh": tanh,
+            "softmax": softmax,
+            "none": None,
+        }
+
+        return mapping.get(activation_name, None)

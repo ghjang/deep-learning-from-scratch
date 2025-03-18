@@ -1,0 +1,81 @@
+import numpy as np
+from numpy.typing import NDArray
+from typing import TypeVar, Generic, Literal
+
+T = TypeVar("T")
+
+
+class LossMixin(Generic[T]):
+    """
+    손실 함수(Loss Function) 계산을 제공하는 믹스인 클래스
+
+    이 믹스인은 다양한 손실 함수를 구현하고 신경망 훈련에 필요한
+    손실값 계산 기능을 제공합니다.
+
+    Notes:
+        SSE(Sum of Squared Error)와 MSE(Mean Squared Error)의 관계:
+        -----------------------------------------------------------
+        1. SSE = Σ(y_true - y_pred)²
+           - 모든 오차 제곱의 합계
+           - 배치 크기에 비례하여 증가함
+           - 수식: SSE = Σ_i Σ_j (y_true_ij - y_pred_ij)²
+
+        2. MSE = (1/n) × Σ(y_true - y_pred)² = SSE/n
+           - 오차 제곱의 평균값
+           - 배치 크기와 무관하게 일관된 크기를 유지함
+           - 수식: MSE = (1/n) × Σ_i Σ_j (y_true_ij - y_pred_ij)²
+
+        3. 배치 처리에서의 의미:
+           - SSE: 배치 크기가 커지면 손실값도 비례하여 커짐
+           - MSE: 배치 크기와 무관하게 일관된 스케일의 손실값 제공
+
+        4. 그래디언트에 미치는 영향:
+           - SSE 그래디언트: ∇SSE = 2(y_pred - y_true)
+           - MSE 그래디언트: ∇MSE = (2/n)(y_pred - y_true) = ∇SSE/n
+           - MSE 사용 시 배치 크기에 관계없이 일관된 크기의 그래디언트 계산 가능
+
+        5. 실제 구현:
+           - 딥러닝 프레임워크에서는 대부분 MSE를 사용함
+           - 배치 학습 시 일관된 학습률 사용을 위해 중요
+    """
+
+    def compute_loss(
+        self,
+        y_pred: NDArray,
+        y_true: NDArray,
+        loss_type: Literal["mse", "cross_entropy"] = "mse",
+    ) -> float:
+        """
+        예측값과 실제값 간의 손실을 계산합니다.
+
+        Args:
+            y_pred: 모델의 예측값
+            y_true: 실제 정답값
+            loss_type: 손실 함수 유형 ('mse' 또는 'cross_entropy')
+
+        Returns:
+            계산된 손실값
+        """
+        if loss_type == "mse":
+            # 평균 제곱 오차 (Mean Squared Error)
+            return np.mean((y_pred - y_true) ** 2)
+
+        elif loss_type == "cross_entropy":
+            # Cross Entropy Loss (분류 문제에 적합)
+            # 수치 안정성을 위해 epsilon 추가
+            eps = 1e-10
+            # 확률값의 범위를 [eps, 1-eps]로 클리핑
+            y_pred_clipped = np.clip(y_pred, eps, 1 - eps)
+            # Cross Entropy 계산
+            if y_true.ndim == 1 or y_true.shape[1] == 1:
+                # 이진 분류인 경우
+                return -np.mean(
+                    y_true * np.log(y_pred_clipped)
+                    + (1 - y_true) * np.log(1 - y_pred_clipped)
+                )
+            else:
+                # 다중 클래스 분류인 경우
+                return -np.mean(np.sum(y_true * np.log(y_pred_clipped), axis=1))
+
+        else:
+            raise ValueError(f"지원하지 않는 손실 함수 유형: {loss_type}")
