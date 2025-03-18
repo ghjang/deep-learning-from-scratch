@@ -33,7 +33,8 @@ class TestNeuralNet(unittest.TestCase):
         model = NN.create()\
                     .layer(2)\
                     .activation(sigmoid)\
-                    .layer(1).activation(sigmoid)
+                    .layer(1)\
+                    .activation(sigmoid)
 
         # 모델 학습
         model.verbose(interval=1000)\
