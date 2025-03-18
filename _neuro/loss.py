@@ -1,8 +1,11 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import TypeVar, Generic, Literal
+from typing import TypeVar, Generic, Literal, Self
 
 T = TypeVar("T")
+
+# 손실 함수 타입을 위한 타입 앨리어스 정의
+type LossType = Literal["mse", "cross_entropy"]
 
 
 class LossMixin(Generic[T]):
@@ -20,10 +23,10 @@ class LossMixin(Generic[T]):
            - 배치 크기에 비례하여 증가함
            - 수식: SSE = Σ_i Σ_j (y_true_ij - y_pred_ij)²
 
-        2. MSE = (1/n) × Σ(y_true - y_pred)² = SSE/n
+        2. MSE = (1/n) x Σ(y_true - y_pred)² = SSE/n
            - 오차 제곱의 평균값
            - 배치 크기와 무관하게 일관된 크기를 유지함
-           - 수식: MSE = (1/n) × Σ_i Σ_j (y_true_ij - y_pred_ij)²
+           - 수식: MSE = (1/n) x Σ_i Σ_j (y_true_ij - y_pred_ij)²
 
         3. 배치 처리에서의 의미:
            - SSE: 배치 크기가 커지면 손실값도 비례하여 커짐
@@ -39,11 +42,30 @@ class LossMixin(Generic[T]):
            - 배치 학습 시 일관된 학습률 사용을 위해 중요
     """
 
+    def __init__(self) -> None:
+        """LossMixin 초기화"""
+        super().__init__()
+        self._loss_type: LossType = "mse"  # 기본 손실 함수 유형
+
+    def loss(self, loss_type: LossType) -> Self:
+        """
+        사용할 손실 함수 유형을 설정합니다.
+
+        Args:
+            loss_type: 손실 함수 유형 ('mse' 또는 'cross_entropy')
+
+        Returns:
+            자기 자신 (메서드 체이닝 지원)
+        """
+        self._loss_type = loss_type
+        return self
+
     def compute_loss(
         self,
         y_pred: NDArray,
         y_true: NDArray,
-        loss_type: Literal["mse", "cross_entropy"] = "mse",
+        loss_type: LossType | None = None,
+        axis: int = -1,
     ) -> float:
         """
         예측값과 실제값 간의 손실을 계산합니다.
@@ -52,15 +74,22 @@ class LossMixin(Generic[T]):
             y_pred: 모델의 예측값
             y_true: 실제 정답값
             loss_type: 손실 함수 유형 ('mse' 또는 'cross_entropy')
+                      None이면 사전 설정된 self._loss_type 사용
+            axis: 분류 문제에서 클래스 차원의 축 (기본값: -1, 마지막 차원)
+                - 일반적인 (batch_size, classes) 형태의 데이터에서는 axis=1
+                - 다차원 출력의 경우 클래스가 있는 차원을 지정
 
         Returns:
             계산된 손실값
         """
-        if loss_type == "mse":
+        # loss_type이 지정되지 않은 경우 인스턴스 변수 _loss_type 사용
+        current_loss_type = self._loss_type if loss_type is None else loss_type
+
+        if current_loss_type == "mse":
             # 평균 제곱 오차 (Mean Squared Error)
             return np.mean((y_pred - y_true) ** 2)
 
-        elif loss_type == "cross_entropy":
+        elif current_loss_type == "cross_entropy":
             # Cross Entropy Loss (분류 문제에 적합)
             # 수치 안정성을 위해 epsilon 추가
             eps = 1e-10
@@ -75,7 +104,8 @@ class LossMixin(Generic[T]):
                 )
             else:
                 # 다중 클래스 분류인 경우
-                return -np.mean(np.sum(y_true * np.log(y_pred_clipped), axis=1))
+                # axis 매개변수를 사용하여 클래스 차원을 지정
+                return -np.mean(np.sum(y_true * np.log(y_pred_clipped), axis=axis))
 
         else:
             raise ValueError(f"지원하지 않는 손실 함수 유형: {loss_type}")

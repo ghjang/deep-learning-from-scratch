@@ -1,8 +1,11 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import TypeVar, Generic, Dict, Callable
+from typing import TypeVar, Generic, Callable, Literal
 
 T = TypeVar("T")
+
+# 파라미터 타입 정의
+ParamType = Literal["weights", "biases"]
 
 
 class GradientMixin(Generic[T]):
@@ -79,9 +82,49 @@ class GradientMixin(Generic[T]):
         """
         return self.numerical_gradient(f, x)
 
+    def _compute_param_gradient(
+        self,
+        layer_idx: int,
+        param_type: ParamType,
+        x: NDArray,
+        objective_fn: Callable[[NDArray], float],
+    ) -> NDArray:
+        """
+        특정 레이어와 파라미터 타입에 대한 그래디언트를 계산합니다.
+
+        Args:
+            layer_idx: 레이어 인덱스
+            param_type: 파라미터 타입 ("weights" 또는 "biases")
+            x: 입력 데이터
+            objective_fn: 목적 함수
+
+        Returns:
+            해당 파라미터에 대한 그래디언트
+        """
+        model = self
+        layer = model.layers[layer_idx]
+        param = getattr(layer, param_type)
+
+        if param is None:
+            return None
+
+        def obj_param(p):
+            # 원본 파라미터 저장
+            original_param = param.copy()
+            # 새 파라미터 설정
+            setattr(layer, param_type, p)
+            # 순방향 계산 및 목적 함수 값 얻기
+            y_pred = model.forward(x)
+            result = objective_fn(y_pred)
+            # 원본 파라미터 복원
+            setattr(layer, param_type, original_param)
+            return result
+
+        return self.compute_function_gradients(obj_param, param)
+
     def compute_model_gradients(
         self, x: NDArray, objective_fn: Callable[[NDArray], float]
-    ) -> Dict[int, Dict[str, NDArray]]:
+    ) -> dict[int, dict[str, NDArray]]:
         """
         네트워크의 모든 파라미터에 대한 임의의 목적 함수의 그래디언트를 계산합니다.
 
@@ -96,40 +139,20 @@ class GradientMixin(Generic[T]):
             각 레이어 파라미터에 대한 그래디언트 딕셔너리
         """
         model = self
-        gradients = {}
+        gradients: dict[int, dict[str, NDArray]] = {}
 
         # 각 레이어의 파라미터에 대한 그래디언트 계산
-        for i, layer in enumerate(model.layers):
+        for i in range(len(model.layers)):
             gradients[i] = {}
 
             # 가중치에 대한 그래디언트 계산
-            if layer.weights is not None:
-
-                def obj_weights(weights):
-                    original_weights = layer.weights.copy()
-                    layer.weights = weights
-                    y_pred = model.forward(x)
-                    result = objective_fn(y_pred)
-                    layer.weights = original_weights
-                    return result
-
-                grad_weights = self.compute_function_gradients(
-                    obj_weights, layer.weights
-                )
+            grad_weights = self._compute_param_gradient(i, "weights", x, objective_fn)
+            if grad_weights is not None:
                 gradients[i]["weights"] = grad_weights
 
             # 편향에 대한 그래디언트 계산
-            if layer.biases is not None:
-
-                def obj_biases(biases):
-                    original_biases = layer.biases.copy()
-                    layer.biases = biases
-                    y_pred = model.forward(x)
-                    result = objective_fn(y_pred)
-                    layer.biases = original_biases
-                    return result
-
-                grad_biases = self.compute_function_gradients(obj_biases, layer.biases)
+            grad_biases = self._compute_param_gradient(i, "biases", x, objective_fn)
+            if grad_biases is not None:
                 gradients[i]["biases"] = grad_biases
 
         return gradients

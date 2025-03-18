@@ -18,6 +18,32 @@ def relu(x: NDArray) -> NDArray:
     return np.maximum(0, x)
 
 
+def leaky_relu(x: NDArray, alpha: float = 0.01) -> NDArray:
+    """Leaky ReLU 함수: 입력이 0보다 크면 그대로, 아니면 alpha를 곱합니다.
+
+    Args:
+        x: 입력 배열
+        alpha: 음수 입력에 대한 기울기 계수 (기본값: 0.01)
+
+    Returns:
+        Leaky ReLU 활성화 적용된 배열
+    """
+    return np.where(x > 0, x, alpha * x)
+
+
+def elu(x: NDArray, alpha: float = 1.0) -> NDArray:
+    """ELU(Exponential Linear Unit) 활성화 함수
+
+    Args:
+        x: 입력 배열
+        alpha: 음수 영역의 스케일 파라미터 (기본값: 1.0)
+
+    Returns:
+        ELU 활성화 적용된 배열
+    """
+    return np.where(x > 0, x, alpha * (np.exp(x) - 1))
+
+
 def sigmoid(x: NDArray) -> NDArray:
     """시그모이드 함수: 입력을 0과 1 사이의 값으로 변환합니다.
 

@@ -1,7 +1,18 @@
 import os
 import json
 import numpy as np
-from typing import TypeVar, Generic, Any, cast
+from typing import TypeVar, Generic, Any, cast, Callable
+from numpy.typing import NDArray
+from activation import (
+    ActivationFunction,
+    identity,
+    sigmoid,
+    relu,
+    leaky_relu,
+    elu,
+    tanh,
+    softmax,
+)
 
 # 모델 타입 정의 (타입 가변성 허용)
 T = TypeVar("T")
@@ -16,6 +27,29 @@ class SaveLoadMixin(Generic[T]):
     2. create 메서드: 새 인스턴스 생성
     3. layer 메서드: 레이어 추가
     """
+
+    # 활성화 함수 매핑 테이블을 클래스 상수로 정의
+    _ACTIVATION_NAME_MAP: dict[Callable[[NDArray], NDArray] | None, str] = {
+        None: "none",
+        identity: "identity",
+        sigmoid: "sigmoid",
+        relu: "relu",
+        leaky_relu: "leaky_relu",
+        elu: "elu",
+        tanh: "tanh",
+        softmax: "softmax",
+    }
+
+    _ACTIVATION_FUNCTION_MAP: dict[str, Callable[[NDArray], NDArray] | None] = {
+        "none": None,
+        "identity": identity,
+        "sigmoid": sigmoid,
+        "relu": relu,
+        "leaky_relu": leaky_relu,
+        "elu": elu,
+        "tanh": tanh,
+        "softmax": softmax,
+    }
 
     def save(self, filepath: str, overwrite: bool = False) -> None:
         """모델 상태를 파일에 저장합니다.
@@ -174,35 +208,11 @@ class SaveLoadMixin(Generic[T]):
             )
 
     @staticmethod
-    def _get_activation_name(activation_function) -> str:
+    def _get_activation_name(activation_function: ActivationFunction | None) -> str:
         """활성화 함수를 이름으로 변환합니다."""
-        from activation import identity, sigmoid, relu, tanh, softmax
-
-        # 매핑 테이블을 사용해 코드 간결화
-        mapping = {
-            None: "none",
-            identity: "identity",
-            sigmoid: "sigmoid",
-            relu: "relu",
-            tanh: "tanh",
-            softmax: "softmax",
-        }
-
-        return mapping.get(activation_function, "none")
+        return SaveLoadMixin._ACTIVATION_NAME_MAP.get(activation_function, "none")
 
     @staticmethod
-    def _get_activation_function(activation_name: str):
+    def _get_activation_function(activation_name: str) -> ActivationFunction | None:
         """이름을 활성화 함수로 변환합니다."""
-        from activation import identity, sigmoid, relu, tanh, softmax
-
-        # 매핑 테이블을 사용해 코드 간결화
-        mapping = {
-            "identity": identity,
-            "sigmoid": sigmoid,
-            "relu": relu,
-            "tanh": tanh,
-            "softmax": softmax,
-            "none": None,
-        }
-
-        return mapping.get(activation_name, None)
+        return SaveLoadMixin._ACTIVATION_FUNCTION_MAP.get(activation_name, None)
