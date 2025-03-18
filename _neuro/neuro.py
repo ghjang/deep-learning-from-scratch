@@ -146,8 +146,10 @@ if __name__ == "__main__":
     model = nn
 
     # 모델 저장 테스트
-    model.save("model_test.npz")  # NumPy 형식으로 저장
-    model.save("model_test.json")  # JSON 형식으로 저장 (사람이 읽을 수 있는 형태)
+    model.save("model_test.npz", overwrite=True)  # NumPy 형식으로 저장
+    model.save(
+        "model_test.json", overwrite=True
+    )  # JSON 형식으로 저장 (사람이 읽을 수 있는 형태)
 
     # 모델 로드 테스트
     loaded_model1 = NeuralNet.load("model_test.npz")

@@ -17,12 +17,24 @@ class SaveLoadMixin(Generic[T]):
     3. layer 메서드: 레이어 추가
     """
 
-    def save(self, filepath: str) -> None:
+    def save(self, filepath: str, overwrite: bool = False) -> None:
         """모델 상태를 파일에 저장합니다.
 
         Args:
             filepath: 저장할 파일 경로 (.npz 또는 .json 확장자)
+            overwrite: 파일이 이미 존재할 경우 덮어쓸지 여부 (기본값: False)
+                       False인 경우 파일이 이미 존재하면 FileExistsError 발생
+
+        Raises:
+            FileExistsError: 파일이 이미 존재하고 overwrite=False인 경우
+            ValueError: 지원하지 않는 파일 형식인 경우
         """
+        # 파일 존재 여부 확인 및 덮어쓰기 설정 검사
+        if os.path.exists(filepath) and not overwrite:
+            raise FileExistsError(
+                f"파일 '{filepath}'이(가) 이미 존재합니다. 덮어쓰려면 overwrite=True로 설정하세요."
+            )
+
         # "self"는 믹스인을 상속한 클래스의 인스턴스
         model = self
 
@@ -90,9 +102,11 @@ class SaveLoadMixin(Generic[T]):
 
         Returns:
             로드된 모델 인스턴스
-        """
-        from activation import identity, sigmoid, relu, tanh, softmax
 
+        Raises:
+            FileNotFoundError: 파일이 존재하지 않는 경우
+            ValueError: 지원하지 않는 파일 형식인 경우
+        """
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"파일을 찾을 수 없습니다: {filepath}")
 

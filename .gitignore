@@ -18,5 +18,8 @@ manim.cfg
 
 # .handy-man folder
 .handy-man/
+
 *.pkl
 *_log.json
+*_test.json
+*_test.npz
