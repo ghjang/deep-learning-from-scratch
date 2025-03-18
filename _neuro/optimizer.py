@@ -346,7 +346,7 @@ class OptimizerMixin(Generic[T]):
 
         if self._verbose:
             print(
-                f"학습 시작: {descent_type}, 배치 크기={min(self._batch_size, n_samples)}, 에포크={self._epochs}"
+                f"\n학습 시작: {descent_type}, 배치 크기={min(self._batch_size, n_samples)}, 에포크={self._epochs}"
             )
 
         for epoch in range(self._epochs):
