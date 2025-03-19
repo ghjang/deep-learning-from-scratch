@@ -1,11 +1,26 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import TypeVar, Generic, Any, Literal, Self
+from typing import TypeVar, Generic, Any, Literal, Self, Callable, TypedDict
 
 T = TypeVar("T")
 
 # 최적화 알고리즘 타입 정의 (더 명확한 이름 사용)
 type OptimizerType = Literal["gradient_descent", "momentum", "rmsprop", "adam"]
+
+
+# 콜백 데이터 구조 정의
+class ProgressData(TypedDict):
+    """콜백 함수에 전달되는 데이터 구조입니다."""
+
+    epoch: int  # 현재 에포크 번호
+    loss: float  # 현재 에포크의 손실값
+    learning_rate: float  # 현재 학습률
+    weights: list[NDArray | None]  # 각 레이어의 가중치 배열 리스트
+    biases: list[NDArray | None]  # 각 레이어의 편향 배열 리스트
+
+
+# 콜백 함수 타입 정의 - 더 구체적인 타입 적용
+type CallbackFn = Callable[[ProgressData], None]
 
 
 class OptimizerMixin(Generic[T]):
@@ -142,6 +157,7 @@ class OptimizerMixin(Generic[T]):
     _batch_size: int
     _verbose: bool
     _verbose_interval: int
+    _callbacks: list[CallbackFn]
 
     def __init__(self) -> None:
         """OptimizerMixin 초기화"""
@@ -159,6 +175,9 @@ class OptimizerMixin(Generic[T]):
         self._batch_size = 32  # 기본 배치 크기
         self._verbose = True  # 기본 출력 여부
         self._verbose_interval = 100  # 기본 출력 간격
+
+        # 콜백 함수 리스트
+        self._callbacks = []
 
     def optimizer(
         self, optimizer_type: OptimizerType = "gradient_descent", **kwargs
@@ -243,6 +262,26 @@ class OptimizerMixin(Generic[T]):
         """
         self._verbose = enabled
         self._verbose_interval = interval
+        return self
+
+    def callback(self, callback_fn: CallbackFn) -> Self:
+        """
+        학습 과정에서 호출될 콜백 함수를 등록합니다.
+
+        콜백 함수는 각 에포크가 끝날 때 호출되며, 현재 모델 상태를 담은 딕셔너리를 인자로 받습니다:
+        - 'epoch': 현재 에포크 번호
+        - 'weights': 현재 가중치 리스트 (레이어별)
+        - 'biases': 현재 바이어스 리스트 (레이어별)
+        - 'loss': 현재 에포크의 손실값
+        - 'learning_rate': 현재 학습률
+
+        Args:
+            callback_fn: 콜백 함수
+
+        Returns:
+            자기 자신 (메서드 체이닝 지원)
+        """
+        self._callbacks.append(callback_fn)
         return self
 
     def compute_loss_gradients(
@@ -368,9 +407,33 @@ class OptimizerMixin(Generic[T]):
 
             history.append(epoch_loss)
 
-            if self._verbose and (
+            # 진행 상황 출력
+            is_verbose_epoch = (
                 epoch % self._verbose_interval == 0 or epoch == self._epochs - 1
-            ):
+            )
+
+            if self._verbose and is_verbose_epoch:
                 print(f"에포크 {epoch+1}/{self._epochs}, 손실: {epoch_loss:.6f}")
+
+            # 콜백 함수 호출 - verbose 인터벌과 동일하게 적용
+            if self._callbacks and is_verbose_epoch:
+                # 현재 모델 상태 정보 수집
+                callback_info: ProgressData = {
+                    "epoch": epoch,
+                    "loss": epoch_loss,
+                    "learning_rate": self._learning_rate,
+                    "weights": [
+                        layer.weights.copy() if layer.weights is not None else None
+                        for layer in self.layers
+                    ],
+                    "biases": [
+                        layer.biases.copy() if layer.biases is not None else None
+                        for layer in self.layers
+                    ],
+                }
+
+                # 모든 콜백 함수 호출
+                for callback_fn in self._callbacks:
+                    callback_fn(callback_info)
 
         return history
