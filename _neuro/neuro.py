@@ -208,6 +208,30 @@ class NeuralNet(
         final_output_size = self.layers[-1].output_size
         return (input_batch_size, final_output_size)
 
+    def _format_memory_size(self, bytes_count: int) -> str:
+        """바이트 수를 읽기 쉬운 메모리 크기 문자열로 변환합니다.
+
+        Args:
+            bytes_count: 바이트 단위의 메모리 크기
+
+        Returns:
+            단위가 포함된 메모리 크기 문자열 (예: "1.25 MB")
+        """
+        # 적절한 단위로 변환 (B, KB, MB, GB)
+        units = ["B", "KB", "MB", "GB"]
+        size = bytes_count
+        unit_index = 0
+
+        while size >= 1024 and unit_index < len(units) - 1:
+            size /= 1024
+            unit_index += 1
+
+        # 정수인 경우 소수점 없이 표시, 실수인 경우 소수점 두 자리까지 표시
+        if size.is_integer():
+            return f"{int(size)} {units[unit_index]}"
+        else:
+            return f"{size:.2f} {units[unit_index]}"
+
     def summary(self) -> None:
         """신경망 구조에 대한 요약 정보를 출력합니다."""
         print("신경망 모델 요약:")
@@ -216,6 +240,7 @@ class NeuralNet(
         print("-" * 60)
 
         total_params = 0
+        total_bytes = 0  # 메모리 사용량 계산을 위한 변수 추가
 
         # 입력층 표시 (첫 번째 레이어의 입력 크기 기준)
         if self.layers and self.layers[0].weights is not None:
@@ -230,6 +255,12 @@ class NeuralNet(
             bias_params = 0 if layer.biases is None else layer.biases.size
             params = weights_params + bias_params
 
+            # 메모리 사용량 계산 추가
+            if layer.weights is not None:
+                total_bytes += layer.weights.nbytes
+            if layer.biases is not None:
+                total_bytes += layer.biases.nbytes
+
             # 활성화 함수 이름 확인
             if layer.activation is None:
                 act_name = "없음"
@@ -242,6 +273,60 @@ class NeuralNet(
             total_params += params
             print(f"{layer_type:^10}{layer.output_size:^15}{params:^15}{act_name:^20}")
 
+        # 메모리 사용량 형식화에 공통 메서드 사용
+        memory_size = self._format_memory_size(total_bytes)
+
         print("-" * 60)
         print(f"총 파라미터 수: {total_params:,}")
+        print(f"총 메모리 사용량: {memory_size}")
         print("-" * 60)
+
+    def get_model_info(self) -> dict[str, tuple[int, str]]:
+        """모델의 파라미터 개수와 메모리 사용량 정보를 반환합니다.
+
+        한 번의 순회로 모든 정보를 수집하여 효율성을 높입니다.
+
+        Returns:
+            딕셔너리: {'parameters': (파라미터 수, 문자열 표현),
+                     'memory': (바이트 수, 문자열 표현)}
+        """
+        total_params = 0
+        total_bytes = 0
+
+        for layer in self.layers:
+            # 가중치 파라미터 처리
+            if layer.weights is not None:
+                total_params += layer.weights.size
+                total_bytes += layer.weights.nbytes
+
+            # 편향 파라미터 처리
+            if layer.biases is not None:
+                total_params += layer.biases.size
+                total_bytes += layer.biases.nbytes
+
+        # 메모리 사용량 형식화에 공통 메서드 사용
+        size_str = self._format_memory_size(total_bytes)
+
+        # 파라미터 수를 천 단위 구분자로 포맷팅
+        params_str = f"{total_params:,}"
+
+        return {
+            "parameters": (total_params, params_str),
+            "memory": (total_bytes, size_str),
+        }
+
+    def count_parameters(self) -> int:
+        """모델의 총 학습 가능한 파라미터 개수를 반환합니다.
+
+        Returns:
+            모델의 총 파라미터 개수
+        """
+        return self.get_model_info()["parameters"][0]
+
+    def memory_usage(self) -> tuple[int, str]:
+        """모델 파라미터가 사용하는 총 메모리 양을 계산합니다.
+
+        Returns:
+            튜플: (바이트 단위 메모리 사용량, 단위가 포함된 문자열 표현)
+        """
+        return self.get_model_info()["memory"]

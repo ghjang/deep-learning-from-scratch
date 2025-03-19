@@ -63,7 +63,18 @@ class TestNeuralNet(unittest.TestCase):
         # 훈련 데이터에 대한 예측값과 실제값 비교
         self.assertTrue(np.allclose(predictions, y, atol=0.1))
 
+        # 모델 파라미터 정보 출력
+        print(f"\n모델 파라미터 개수: {model.count_parameters():,}\n")
+        _, memory_usage = model.memory_usage()
+        print(f"모델 파라미터 메모리 사용량: {memory_usage}\n")
+
     def test_xor_gate_learning(self):
+        """
+        NOTE: 같은 '하이퍼파라미터'를 지정해서 학습을 진행하더라도
+              내부에서 설정되는 '랜덤한 가중치 초기화' 등의 요소에 따라서
+              학습 결과가 달라질 수 있다. 물론 경우에 따라서는 학습이
+              전혀 되지 않을 수도 있다.
+        """
         # fmt: off
 
         # 입력값
@@ -106,6 +117,11 @@ class TestNeuralNet(unittest.TestCase):
 
         # 훈련 데이터에 대한 예측값과 실제값 비교
         self.assertTrue(np.allclose(predictions, y, atol=0.1))
+
+        # 모델 구조 요약 출력
+        print("\n")
+        model.summary()
+        print("\n")
 
 
 if __name__ == "__main__":
