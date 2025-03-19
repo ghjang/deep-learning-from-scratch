@@ -23,7 +23,7 @@ d = {"apple": 100, "banana": 100}
 print((10).bit_length())    # 출력: 4
 ```
 
-### b. 파이썬에서 모든 표현 대상은 'object' 클래스를 상속받은 '객체'이다
+### b. 파이썬에서 모든 표현 대상은 `object` 클래스를 상속받은 '객체'이다
 
 파이썬에서는 모든 타입이 `object` 클래스를 암묵적으로 상속받는다. 이는 모든 객체가 공통으로 가지는 기본 메서드와 속성이 있다는 것을 의미한다:
 
@@ -509,20 +509,396 @@ for coord in v1:
     print(coord)  # 3, 4 출력
 ```
 
-자주 사용되는 특수 메서드들:
+### d. 다중 상속과 MRO(Method Resolution Order)
 
-* `__init__(self, ...)`: 객체 초기화 (생성자)
-* `__str__(self)`: 사용자 친화적 문자열 변환
-* `__repr__(self)`: 개발자 친화적 문자열 표현
-* `__add__(self, other)`, `__sub__(self, other)` 등: 산술 연산자
-* `__eq__(self, other)`, `__lt__(self, other)` 등: 비교 연산자
-* `__getitem__(self, key)`, `__setitem__(self, key, value)`: 인덱싱/슬라이싱
-* `__len__(self)`: `len()` 함수 지원
-* `__call__(self, ...)`: 객체를 함수처럼 호출 가능하게 함
-* `__enter__(self)`, `__exit__(self, exc_type, exc_val, exc_tb)`: 컨텍스트 관리자
-* `__iter__(self)`, `__next__(self)`: 이터레이터 프로토콜
+파이썬은 다중 상속을 지원하며, MRO(Method Resolution Order)는 메서드 해석 순서를 결정하는 알고리즘이다:
 
-파이썬의 객체 지향 특성은 유연하면서도 강력한 프로그래밍 패러다임을 제공한다. 모든 것이 객체인 파이썬에서는 이러한 객체 지향 개념을 일관되게 활용할 수 있다.
+```python
+# 다중 상속 예시
+class A:
+    def greet(self):
+        return "A의 인사"
+
+class B(A):
+    def greet(self):
+        return "B의 인사"
+
+class C(A):
+    def greet(self):
+        return "C의 인사"
+
+# 다이아몬드 상속 구조
+class D(B, C):
+    pass
+
+# MRO 확인
+print(D.__mro__)  
+# (<class '__main__.D'>, <class '__main__.B'>, <class '__main__.C'>, <class '__main__.A'>, <class 'object'>)
+
+d = D()
+print(d.greet())  # "B의 인사" (MRO에 따라 B의 메서드가 우선)
+```
+
+#### MRO의 주요 특징
+
+1. __C3 선형화 알고리즘__ - 파이썬 2.3부터 도입된 일관된 메서드 해석 순서 결정 방식
+2. __왼쪽에서 오른쪽으로의 우선순위__ - 상속 목록에서 왼쪽에 있는 클래스가 우선
+3. __깊이 우선 탐색__ - 하위 클래스가 모든 상위 클래스보다 우선
+4. __단일 경로__ - 클래스는 MRO에서 정확히 한 번만 나타남
+
+MRO를 확인하는 방법:
+
+```python
+# 클래스의 MRO 확인
+print(ClassName.__mro__)  # 튜플 형태로 반환
+print(ClassName.mro())    # 리스트 형태로 반환
+```
+
+#### 다중 상속 설계 지침
+
+1. __믹스인 패턴__ - 단일 기능을 제공하는 클래스를 조합하여 사용
+2. __인터페이스 일관성__ - 상속받는 모든 클래스에서 일관된 메서드 시그니처 유지
+3. __상속 구조 단순화__ - 과도하게 복잡한 상속 구조 지양
+
+```python
+# 믹스인 패턴 예시
+class SerializableMixin:
+    def to_json(self):
+        import json
+        return json.dumps(self.__dict__)
+
+class LoggableMixin:
+    def log(self, message):
+        print(f"로그: {message}")
+
+class User(SerializableMixin, LoggableMixin):
+    def __init__(self, name, email):
+        self.name = name
+        self.email = email
+
+# 각 믹스인의 기능을 모두 사용 가능
+user = User("홍길동", "hong@example.com")
+json_data = user.to_json()
+user.log("사용자 객체 생성됨")
+```
+
+### e. super() 키워드 사용법
+
+`super()` 키워드는 부모 클래스의 메서드를 호출하기 위해 사용되며, 올바른 MRO를 따라 메서드를 찾는다:
+
+```python
+class Parent:
+    def __init__(self, name):
+        self.name = name
+    
+    def greet(self):
+        return f"안녕하세요, {self.name}입니다!"
+
+class Child(Parent):
+    def __init__(self, name, age):
+        # 부모 클래스의 __init__ 호출
+        super().__init__(name)
+        self.age = age
+    
+    def greet(self):
+        # 부모 클래스의 greet 메서드를 확장
+        parent_greeting = super().greet()
+        return f"{parent_greeting} 저는 {self.age}살입니다."
+
+# 사용 예시
+child = Child("김철수", 10)
+print(child.greet())  # "안녕하세요, 김철수입니다! 저는 10살입니다."
+```
+
+#### super()의 주요 특징
+
+1. __매개변수 없는 호출__ - `super()` 만으로 현재 클래스와 인스턴스의 정보를 자동 전달:
+
+   ```python
+   super().__init__()  # Python 3 방식
+   ```
+
+2. __명시적 매개변수 전달__ - 클래스와 인스턴스를 명시적으로 지정:
+
+   ```python
+   super(Child, self).__init__()  # 전통적인 방식
+   ```
+
+3. __다중 상속에서의 활용__ - MRO에 따라 다음 클래스의 메서드 호출:
+
+   ```python
+   class A:
+       def method(self):
+           print("A의 메서드")
+
+   class B(A):
+       def method(self):
+           print("B의 메서드")
+           super().method()  # A.method() 호출
+
+   class C(A):
+       def method(self):
+           print("C의 메서드")
+           super().method()  # A.method() 호출
+
+   class D(B, C):
+       def method(self):
+           print("D의 메서드")
+           super().method()  # MRO에 따라 B.method() 호출
+
+   # MRO: D -> B -> C -> A -> object
+   D().method()
+   # 출력:
+   # D의 메서드
+   # B의 메서드
+   # C의 메서드 
+   # A의 메서드
+   ```
+
+#### 협동적 다중 상속(Cooperative Multiple Inheritance)
+
+복잡한 다중 상속 구조에서는 각 클래스가 `super()`를 사용해 메서드 체인을 유지하는 '협동적 상속' 패턴이 권장된다:
+
+```python
+class Base:
+    def __init__(self):
+        print("Base 초기화")
+
+class A(Base):
+    def __init__(self):
+        print("A 초기화 시작")
+        super().__init__()
+        print("A 초기화 완료")
+
+class B(Base):
+    def __init__(self):
+        print("B 초기화 시작")
+        super().__init__()
+        print("B 초기화 완료")
+
+class C(A, B):
+    def __init__(self):
+        print("C 초기화 시작")
+        super().__init__()  # MRO에 따라 A.__init__ 호출
+        print("C 초기화 완료")
+
+# 실행 결과
+c = C()
+# C 초기화 시작
+# A 초기화 시작
+# B 초기화 시작
+# Base 초기화
+# B 초기화 완료
+# A 초기화 완료
+# C 초기화 완료
+
+# MRO 확인
+print(C.__mro__)
+# (<class '__main__.C'>, <class '__main__.A'>, <class '__main__.B'>, <class '__main__.Base'>, <class 'object'>)
+```
+
+이와 같은 협동적 다중 상속 패턴은 믹스인 클래스를 활용할 때 특히 중요하며, 각 믹스인이 `super()`를 통해 메서드 체인을 유지함으로써 모든 기능이 적절히 초기화되고 실행될 수 있게 한다.
+
+## 1.3.5 파이썬의 기타 객체 지향 기능들
+
+### a. 자주 사용되는 특수 메서드들
+
+파이썬의 객체 지향 프로그래밍 시스템은 특수 메서드(던더 메서드, dunder methods)를 통해 다양한 기능을 제공합니다. 이러한 메서드들은 이름이 이중 밑줄(`__`)로 둘러싸여 있으며, 특정 상황에서 자동으로 호출됩니다:
+
+```python
+# 자주 사용되는 특수 메서드 요약
+class MyClass:
+    def __init__(self, value):
+        """객체 초기화 (생성자)"""
+        self.value = value
+    
+    def __str__(self):
+        """문자열 표현 (str() 함수나 print() 사용 시)"""
+        return f"MyClass 객체: {self.value}"
+    
+    def __repr__(self):
+        """개발자용 표현 (repr() 함수 사용 시, 디버깅용)"""
+        return f"MyClass({self.value!r})"
+    
+    def __eq__(self, other):
+        """== 연산자 동작 정의"""
+        if not isinstance(other, MyClass):
+            return NotImplemented
+        return self.value == other.value
+    
+    def __lt__(self, other):
+        """< 연산자 동작 정의 (정렬 시 활용)"""
+        if not isinstance(other, MyClass):
+            return NotImplemented
+        return self.value < other.value
+    
+    def __len__(self):
+        """len() 함수 동작 정의"""
+        return len(str(self.value))
+    
+    def __getitem__(self, key):
+        """인덱싱 동작 정의 (obj[key])"""
+        if key == 0:
+            return self.value
+        raise IndexError("인덱스 범위 초과")
+    
+    def __call__(self, *args, **kwargs):
+        """함수처럼 호출 가능하게 함 (obj())"""
+        return f"호출됨: {self.value}, 인자: {args}, 키워드: {kwargs}"
+    
+    def __enter__(self):
+        """컨텍스트 관리자 진입 (with 문)"""
+        print("컨텍스트 시작")
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """컨텍스트 관리자 종료 (with 문)"""
+        print("컨텍스트 종료")
+        return False  # 예외를 다시 발생시킴
+    
+    def __add__(self, other):
+        """+ 연산자 동작 정의"""
+        if isinstance(other, MyClass):
+            return MyClass(self.value + other.value)
+        elif isinstance(other, (int, float, str)):
+            return MyClass(self.value + other)
+        return NotImplemented
+    
+    def __radd__(self, other):
+        """오른쪽 피연산자에 대한 + 연산자 정의 (다른 타입 + self)"""
+        if isinstance(other, (int, float, str)):
+            return MyClass(other + self.value)
+        return NotImplemented
+
+# 특수 메서드 사용 예시
+obj = MyClass(42)
+print(str(obj))        # MyClass 객체: 42
+print(repr(obj))       # MyClass(42)
+print(obj == MyClass(42))  # True
+print(len(obj))        # 2 (문자열 "42"의 길이)
+print(obj[0])          # 42
+print(obj(1, 2, x=3))  # 호출됨: 42, 인자: (1, 2), 키워드: {'x': 3}
+
+with obj as context:
+    print("컨텍스트 내부 코드")
+# 컨텍스트 시작
+# 컨텍스트 내부 코드
+# 컨텍스트 종료
+
+print(obj + 10)        # MyClass 객체: 52
+print(20 + obj)        # MyClass 객체: 62
+```
+
+#### 핵심 특수 메서드 목록
+
+다음은 파이썬에서 가장 많이 사용되는 특수 메서드들입니다:
+
+| 카테고리 | 메서드 | 설명 | 관련 연산/함수 |
+|---------|-------|------|--------------|
+| __객체 생성/초기화__ | `__new__` | 객체 생성 | `클래스()` 호출 |
+|  | `__init__` | 객체 초기화 | 생성자 |
+|  | `__del__` | 객체 소멸자 | 가비지 컬렉션 시 |
+| __문자열 변환__ | `__str__` | 사용자 친화적 문자열 표현 | `str()`, `print()` |
+|  | `__repr__` | 개발자용 문자열 표현 | `repr()` |
+|  | `__format__` | 포맷 문자열 변환 | `format()`, f-문자열 |
+| __산술 연산자__ | `__add__`, `__radd__` | 덧셈 | `+` |
+|  | `__sub__`, `__rsub__` | 뺄셈 | `-` |
+|  | `__mul__`, `__rmul__` | 곱셈 | `*` |
+|  | `__truediv__`, `__rtruediv__` | 나눗셈 | `/` |
+|  | `__floordiv__`, `__rfloordiv__` | 정수 나눗셈 | `//` |
+|  | `__mod__`, `__rmod__` | 나머지 | `%` |
+|  | `__pow__`, `__rpow__` | 거듭제곱 | `**`, `pow()` |
+|  | `__neg__` | 단항 부정 | `-obj` |
+|  | `__pos__` | 단항 양수 | `+obj` |
+|  | `__abs__` | 절댓값 | `abs()` |
+| __비교 연산자__ | `__eq__` | 동등 비교 | `==` |
+|  | `__ne__` | 불일치 비교 | `!=` |
+|  | `__lt__` | 작음 비교 | `<` |
+|  | `__le__` | 작거나 같음 비교 | `<=` |
+|  | `__gt__` | 큼 비교 | `>` |
+|  | `__ge__` | 크거나 같음 비교 | `>=` |
+| __컨테이너 동작__ | `__len__` | 길이 계산 | `len()` |
+|  | `__getitem__` | 요소 접근 | `obj[key]` |
+|  | `__setitem__` | 요소 설정 | `obj[key] = value` |
+|  | `__delitem__` | 요소 삭제 | `del obj[key]` |
+|  | `__contains__` | 멤버십 테스트 | `in` |
+|  | `__iter__` | 이터레이터 반환 | `iter()`, `for` 루프 |
+|  | `__next__` | 다음 요소 반환 | `next()`, 이터레이션 |
+| __속성 접근__ | `__getattr__` | 존재하지 않는 속성 접근 | `obj.name` |
+|  | `__getattribute__` | 모든 속성 접근 | `obj.name` |
+|  | `__setattr__` | 속성 설정 | `obj.name = value` |
+|  | `__delattr__` | 속성 삭제 | `del obj.name` |
+| __기타 동작__ | `__call__` | 함수처럼 호출 | `obj()` |
+|  | `__enter__`, `__exit__` | 컨텍스트 관리자 | `with` 문 |
+|  | `__hash__` | 해시값 계산 | `hash()` |
+
+특수 메서드를 활용하면 자신만의 클래스가 파이썬 내장 타입처럼 동작하도록 만들 수 있으며, 기존 연산자와 함수에 맞춤형 동작을 부여할 수 있습니다.
+
+### b. 데코레이터(`@`)를 활용한 메서드 유형 지정
+
+파이썬은 데코레이터(`@` 문법)를 사용하여 메서드의 유형을 지정할 수 있습니다. 대표적으로 `@classmethod`와 `@staticmethod`가 있습니다:
+
+```python
+class Calculator:
+    # 클래스 변수
+    pi = 3.14159
+    
+    def __init__(self, value=0):
+        # 인스턴스 변수
+        self.value = value
+    
+    # 인스턴스 메서드 - 첫 번째 인자로 self를 받음
+    def add(self, x):
+        self.value += x
+        return self.value
+    
+    # 클래스 메서드 - 첫 번째 인자로 cls를 받음
+    @classmethod
+    def create_zero(cls):
+        """0으로 초기화된 새 인스턴스 반환"""
+        return cls(0)
+    
+    # 정적 메서드 - self나 cls를 받지 않음
+    @staticmethod
+    def is_positive(x):
+        """양수 여부 확인"""
+        return x > 0
+    
+    # 속성 접근처럼 사용할 수 있는 메서드
+    @property
+    def square(self):
+        """현재 값의 제곱 계산"""
+        return self.value ** 2
+    
+    # setter 프로퍼티 - 속성 설정 동작 정의
+    @square.setter
+    def square(self, new_square):
+        # 제곱근 계산으로 값 설정
+        self.value = new_square ** 0.5
+
+# 사용 예시
+calc = Calculator(5)
+print(calc.add(3))                # 8 (인스턴스 메서드)
+print(Calculator.create_zero())    # <__main__.Calculator object at 0x...> (클래스 메서드)
+print(Calculator.is_positive(-1))  # False (정적 메서드)
+print(calc.is_positive(10))        # True (인스턴스에서도 정적 메서드 호출 가능)
+
+# 프로퍼티 사용
+print(calc.square)                 # 64 (제곱값)
+calc.square = 100                  # setter를 통해 값 설정
+print(calc.value)                  # 10 (제곱근 계산됨)
+```
+
+#### 메서드 유형 비교
+
+| 메서드 유형 | 첫 번째 인자 | 호출 방법 | 주요 용도 |
+|------------|------------|---------|---------|
+| 인스턴스 메서드 | `self` (인스턴스) | `obj.method()` | 인스턴스 데이터 조작 |
+| 클래스 메서드 | `cls` (클래스) | `Class.method()` 또는 `obj.method()` | 대체 생성자, 팩토리 메서드 |
+| 정적 메서드 | 특별한 첫 인자 없음 | `Class.method()` 또는 `obj.method()` | 유틸리티 함수, 헬퍼 기능 |
+| 프로퍼티 | `self` (인스턴스) | `obj.property` (메서드처럼 보이지 않음) | 계산된 속성, 캡슐화 |
+
+데코레이터를 사용한 메서드 유형 지정은 객체 지향 설계에서 중요한 도구로, 각 메서드의 목적과 책임을 명확히 표현할 수 있게 해줍니다.
 
 ---
 > [목차로 돌아가기](../../README.md) | [이전: 타입 시스템과 타입 힌트](./1_2_type_system.md) | [다음: 기본 데이터 타입](./1_4_basic_data_types.md)
