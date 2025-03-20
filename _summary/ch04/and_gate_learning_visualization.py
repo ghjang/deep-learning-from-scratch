@@ -1,6 +1,7 @@
 import sys
 import os
 import numpy as np
+from typing import TypedDict
 from manim import *
 
 # 모듈 검색 경로에 _neuro 디렉토리 추가
@@ -9,17 +10,15 @@ sys.path.append(
 )
 from neuro import NeuralNet as NN
 from activation import sigmoid
-from typing import TypedDict
+from optimizer import ProgressData
 
 
-class WeightData(TypedDict):
-    """시각화에 사용될 가중치 데이터 구조입니다."""
-
-    epoch: int
-    weights: list[float]  # [w1, w2]
-    bias: float
-    total_error: float
-    learning_rate: float
+class ProgressDataSnapshot(TypedDict):
+    epoch: int  # 현재 에포크 번호
+    loss: float  # 현재 에포크의 손실값
+    learning_rate: float  # 현재 학습률
+    weights: list[float]  # 현재 가중치
+    bias: float  # 현재 바이어스
 
 
 class AndGateLearningVisualization(Scene):
@@ -60,14 +59,24 @@ class AndGateLearningVisualization(Scene):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # 에포크 데이터를 저장할 리스트 초기화
-        self.epoch_history = []
+        self.epoch_progress_history = []
+
         # 데이터 포인트와 레이블 저장
         self.data_points = []
         self.data_dots = {}
         self.data_labels = {}
 
     def setup(self):
-        self._initial_setup()
+        self._append_training_epoch_progress_data(
+            {
+                "epoch": 0,
+                "loss": 0,
+                "learning_rate": self.LEARNING_RATE,
+                "model_ref": None,
+            }
+        )
+
+        self._setup_AND_gate_model()
 
     def construct(self):
         self.next_section("Initial Setup")
@@ -150,7 +159,7 @@ class AndGateLearningVisualization(Scene):
             # 일반적인 값은 기존과 동일하게 2자리까지 표시하고 불필요한 0 제거
             return f"{value:.2f}".rstrip("0").rstrip(".")
 
-    def _create_epoch_text(self, epoch_data: dict) -> VGroup:
+    def _create_epoch_text(self, epoch_data: ProgressDataSnapshot) -> VGroup:
         """에포크 데이터를 표시하는 텍스트 그룹을 생성합니다."""
         # 에포크 0인지 확인
         is_epoch_zero = epoch_data["epoch"] == 0
@@ -159,22 +168,22 @@ class AndGateLearningVisualization(Scene):
         text_elements = [
             # 기본 정보 (항상 표시)
             MathTex(
-                f"\\textrm{{Epoch: }}{epoch_data['epoch']}",
+                f"\\textrm{{Epoch: }}{epoch_data["epoch"]}",
                 font_size=self.FONT_SIZE,
                 color=self.TEXT_LABEL_COLOR,
             ),
             MathTex(
-                f"\\textrm{{Learning Rate: }}{epoch_data['learning_rate']}",
+                f"\\textrm{{Learning Rate: }}{epoch_data["learning_rate"]}",
                 font_size=self.FONT_SIZE,
                 color=self.TEXT_LABEL_COLOR,
             ),
             MathTex(
-                f"\\textrm{{Weights: }}[{self._format_float(epoch_data['weights'][0])}, {self._format_float(epoch_data['weights'][1])}]",
+                f"\\textrm{{Weights: }}[{self._format_float(epoch_data["weights"][0])}, {self._format_float(epoch_data["weights"][1])}]",
                 font_size=self.FONT_SIZE,
                 color=self.TEXT_LABEL_COLOR,
             ),
             MathTex(
-                f"\\textrm{{Bias: }}{self._format_float(epoch_data['bias'])}",
+                f"\\textrm{{Bias: }}{self._format_float(epoch_data["bias"])}",
                 font_size=self.FONT_SIZE,
                 color=self.TEXT_LABEL_COLOR,
             ),
@@ -182,9 +191,9 @@ class AndGateLearningVisualization(Scene):
 
         # 추가 정보 (에포크 0에서는 숨김)
         additional_texts = [
-            # Loss 텍스트 (total_error 키를 사용)
+            # Loss 텍스트
             MathTex(
-                f"\\textrm{{Loss: }}{self._format_float(epoch_data['total_error'])}",
+                f"\\textrm{{Loss: }}{self._format_float(epoch_data["loss"])}",
                 font_size=self.FONT_SIZE,
                 color=self.TEXT_LABEL_COLOR,
             ),
@@ -234,6 +243,17 @@ class AndGateLearningVisualization(Scene):
                 + "}\\right\\}",
                 color=self.LINE_COLOR,  # 노란색으로 변경
             )
+
+            # 수직선이므로 간소화된 수식 추가
+            x_val = -b / w1
+            simplified_eq = MathTex(
+                f"x = {self._format_float(x_val)}",
+                color=self.LINE_COLOR,
+            )
+
+            # 두 수식을 그룹으로 묶음
+            equation_group = VGroup(equation, simplified_eq).arrange(DOWN, buff=0.2)
+
         else:
             # y = (-w1/w2)x + (-b/w2) 형태
             equation = MathTex(
@@ -252,12 +272,25 @@ class AndGateLearningVisualization(Scene):
                 color=self.LINE_COLOR,  # 노란색으로 변경
             )
 
-        # 방정식을 우상단에 배치
-        equation.scale(self.EQUATION_SCALE)
-        equation.to_corner(UR, buff=0.5)  # 우상단(Upper Right)에 배치
-        equation.set_z_index(self.TEXT_Z_INDEX)
+            # 실제 값으로 계산된 간소화된 수식 추가
+            slope = -w1 / w2
+            y_intercept = -b / w2
 
-        return equation
+            sign = "+" if y_intercept >= 0 else "-"
+            simplified_eq = MathTex(
+                f"y = {self._format_float(slope)} \\cdot x {sign} {self._format_float(abs(y_intercept))}",
+                color=self.LINE_COLOR,
+            )
+
+            # 두 수식을 그룹으로 묶음
+            equation_group = VGroup(equation, simplified_eq).arrange(DOWN, buff=0.5)
+
+        # 방정식을 우상단에 배치
+        equation_group.scale(self.EQUATION_SCALE)
+        equation_group.to_corner(UR, buff=0.5)  # 우상단(Upper Right)에 배치
+        equation_group.set_z_index(self.TEXT_Z_INDEX)
+
+        return equation_group
 
     def _get_safe_x_position(self, x_val):
         """좌표평면 범위 내의 안전한 X 좌표값을 반환합니다."""
@@ -275,7 +308,7 @@ class AndGateLearningVisualization(Scene):
         x_at_target_y = (target_y - y_intercept) / slope
         return self._get_safe_x_position(x_at_target_y)
 
-    def _draw_decision_boundary_with_region(
+    def _draw_decision_boundary_and_region(
         self, number_plane: NumberPlane, weights: list, bias: float
     ) -> tuple[VMobject, VMobject, VMobject]:
         """결정 경계선과 아래쪽 영역, 함수식을 그립니다."""
@@ -312,7 +345,13 @@ class AndGateLearningVisualization(Scene):
             )
 
             # 함수식은 y = 0, 우상단에 표시
-            equation = MathTex("y = 0", color=self.LINE_COLOR)
+            equation = VGroup(
+                MathTex("y = 0", color=self.LINE_COLOR),
+                MathTex(
+                    "y = 0", color=self.LINE_COLOR
+                ),  # 간소화된 형태가 이미 단순하므로 동일하게 표시
+            ).arrange(DOWN, buff=0.2)
+
             equation.scale(self.EQUATION_SCALE)
             equation.to_corner(UR, buff=0.5)  # 우상단에 배치
             equation.set_z_index(self.TEXT_Z_INDEX)
@@ -391,9 +430,10 @@ class AndGateLearningVisualization(Scene):
 
         return line, region, equation
 
-    def _predict_with_weights(self, weights, bias, inputs):
+    def _predict_AND_gate_output_with_weights(self, weights: list, bias: float, inputs):
         """주어진 가중치와 바이어스로 예측 결과를 반환합니다."""
         # 간단한 모델 생성
+        # TODO: layer를 생성하면서 웨이트 값을 직접 설정할 수 있는 방법을 추가할지 고려할 것. 간단한 상황에서 유용할 수 있을 것 같음.
         model = NN.create().layer(1)
 
         # 첫 번째 레이어 가중치와 바이어스 설정
@@ -402,9 +442,12 @@ class AndGateLearningVisualization(Scene):
         layer.biases = np.array([bias])
 
         # 입력에 대한 예측
-        output = model.forward(np.array(inputs))
         # 시그모이드 출력을 0/1로 변환
-        return 1 if output[0, 0] > 0.5 else 0
+        threshold = 0.9  # 시그모이드 출력 임계값
+        output = model.forward(np.array(inputs))
+        output = output[0, 0]  # 1개의 출력값만을 갖는 2D 배열을 1D로 변환
+
+        return 1 if output > threshold else 0
 
     def _update_data_point_colors(self, weights, bias):
         """현재 가중치와 바이어스로 예측 결과에 따라 데이터 포인트 색상을 업데이트합니다."""
@@ -413,7 +456,9 @@ class AndGateLearningVisualization(Scene):
         for point in self.data_points:
             x, y = point["coords"]
             target = point["output"]
-            prediction = self._predict_with_weights(weights, bias, [x, y])
+            prediction = self._predict_AND_gate_output_with_weights(
+                weights, bias, [x, y]
+            )
 
             # 예측 성공/실패에 따른 색상 결정
             new_color = self.CORRECT_COLOR if prediction == target else self.WRONG_COLOR
@@ -438,16 +483,16 @@ class AndGateLearningVisualization(Scene):
 
     def _display_training_history(self, number_plane: NumberPlane) -> None:
         """트레이닝 히스토리 데이터를 사용하여 결정 경계선 변화를 애니메이션으로 표시합니다."""
-        history_len = len(self.epoch_history)
+        history_len = len(self.epoch_progress_history)
         if history_len <= 0:
             return
 
         # 초기 요소들 생성 (에포크 0)
-        first_data = self.epoch_history[0]
+        first_data = self.epoch_progress_history[0]
 
         # 직선과 영역은 생성하되 화면에 표시하지 않음
         current_line, current_region, current_equation = (
-            self._draw_decision_boundary_with_region(
+            self._draw_decision_boundary_and_region(
                 number_plane, first_data["weights"], first_data["bias"]
             )
         )
@@ -459,9 +504,9 @@ class AndGateLearningVisualization(Scene):
 
         # 에포크 1부터는 시각적 요소 모두 표시
         if history_len > 1:
-            epoch_data = self.epoch_history[1]
+            epoch_data = self.epoch_progress_history[1]
             new_line, new_region, new_equation = (
-                self._draw_decision_boundary_with_region(
+                self._draw_decision_boundary_and_region(
                     number_plane, epoch_data["weights"], epoch_data["bias"]
                 )
             )
@@ -479,7 +524,7 @@ class AndGateLearningVisualization(Scene):
                 x, y = point["coords"]
                 target = point["output"]
                 # NeuralNet을 사용한 예측
-                prediction = self._predict_with_weights(
+                prediction = self._predict_AND_gate_output_with_weights(
                     epoch_data["weights"], epoch_data["bias"], [x, y]
                 )
                 # 색상 설정
@@ -517,9 +562,9 @@ class AndGateLearningVisualization(Scene):
 
         # 두 번째 에포크부터는 ReplacementTransform 사용
         for i in range(2, history_len):
-            epoch_data = self.epoch_history[i]
+            epoch_data = self.epoch_progress_history[i]
             new_line, new_region, new_equation = (
-                self._draw_decision_boundary_with_region(
+                self._draw_decision_boundary_and_region(
                     number_plane, epoch_data["weights"], epoch_data["bias"]
                 )
             )
@@ -559,7 +604,7 @@ class AndGateLearningVisualization(Scene):
                 for point in self.data_points:
                     x, y = point["coords"]
                     target = point["output"]
-                    prediction = self._predict_with_weights(
+                    prediction = self._predict_AND_gate_output_with_weights(
                         epoch_data["weights"], epoch_data["bias"], [x, y]
                     )
                     if prediction != target:  # 하나라도 불일치하면 False
@@ -573,53 +618,39 @@ class AndGateLearningVisualization(Scene):
                     )
                     break  # 학습이 완료되어 나머지 에포크는 표시하지 않음
 
-    def _initial_setup(self):
+    def _setup_AND_gate_model(self):
         """초기 설정 및 데이터 학습 수행"""
         # AND 게이트 학습 데이터
         x = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
         y = np.array([[0], [0], [0], [1]])
 
         # 모델 생성 및 설정
+        # ; 각 레이어의 초기 가중치와 바이어스는 layer() 메서드 호출 시 자동으로 설정됨.
         model = (
             NN.create()
             .layer(1)
             .activation(sigmoid)
-            .learning_rate(self.LEARNING_RATE)  # 클래스 상수 사용
+            .learning_rate(self.LEARNING_RATE)
             .batch_size(x.shape[0])
             .epochs(self.EPOCHS)
             .loss("mse")
             .optimizer("gradient_descent")
             .verbose(interval=self.INTERVAL)
-            .callback(self._update_training_data)
-        )
-
-        # 초기 가중치와 바이어스를 작은 난수로 설정
-        model.layers[0].weights = np.random.randn(2, 1) * 0.1
-        model.layers[0].biases = np.random.randn(1) * 0.1
-
-        # 에포크 0 상태 저장 (초기 가중치)
-        initial_weights = model.layers[0].weights.flatten().tolist()
-        initial_bias = float(model.layers[0].biases[0])
-        self._update_training_data(
-            {
-                "epoch": 0,
-                "weights": initial_weights,
-                "bias": initial_bias,
-                "total_error": 0.0,
-                "learning_rate": self.LEARNING_RATE,
-            }
+            .callback(self._append_training_epoch_progress_data)
         )
 
         # 모델 학습
         history = model.fit(x, y)
 
         # 학습 히스토리 결과 출력
-        print(f"\n학습 기록 수집 완료: {len(self.epoch_history)}개의 에포크 데이터")
+        print(
+            f"\n학습 기록 수집 완료: {len(self.epoch_progress_history)}개의 에포크 데이터"
+        )
 
         # 결과 테스트 및 출력
-        self._print_test_results(model, x, y)
+        self._print_trained_model_test_results(model, x, y)
 
-    def _print_test_results(self, model, x, y):
+    def _print_trained_model_test_results(self, model, x, y):
         """학습 결과를 테스트하고 콘솔에 출력합니다."""
         print("\n결과:")
         predictions = model.predict(x)
@@ -636,51 +667,31 @@ class AndGateLearningVisualization(Scene):
         print(f"\n학습된 가중치: {weights}")
         print(f"학습된 바이어스: {bias}")
 
-    def _update_training_data(self, epoch_data: dict) -> None:
+    def _append_training_epoch_progress_data(
+        self, cur_epoch_progress_data: ProgressData
+    ) -> None:
         """에포크 데이터를 기록하고 콘솔에 출력합니다."""
-        # 간소화된 버전 - 우리는 데이터 형식이 ProgressData 또는 간단한 딕셔너리라는 것을 알고 있음
 
-        # NeuroNet 콜백에서 호출된 경우 (맞춤형 ProgressData 형식)
-        if (
-            "weights" in epoch_data
-            and isinstance(epoch_data["weights"], list)
-            and len(epoch_data["weights"]) > 0
-        ):
-            if isinstance(epoch_data["weights"][0], np.ndarray):
-                # 콜백 데이터를 적합한 형태로 변환
-                formatted_data = {
-                    "epoch": epoch_data["epoch"],
-                    "weights": epoch_data["weights"][0].flatten().tolist(),
-                    "bias": (
-                        float(epoch_data["biases"][0][0])
-                        if epoch_data["biases"][0] is not None
-                        else 0.0
-                    ),
-                    "total_error": float(epoch_data["loss"]),
-                    "learning_rate": epoch_data["learning_rate"],
-                }
-            else:
-                # 이미 적절한 형식인 경우
-                formatted_data = {
-                    "epoch": epoch_data["epoch"],
-                    "weights": epoch_data["weights"],
-                    "bias": epoch_data.get("bias", 0.0),
-                    "total_error": epoch_data.get(
-                        "loss", epoch_data.get("total_error", 0.0)
-                    ),
-                    "learning_rate": epoch_data.get(
-                        "learning_rate", self.LEARNING_RATE
-                    ),
-                }
-        else:
-            # 직접 초기화용으로 호출된 경우 (이미 적절한 형식)
-            formatted_data = epoch_data
+        progress_data: ProgressDataSnapshot = {
+            "epoch": cur_epoch_progress_data["epoch"],
+            "loss": cur_epoch_progress_data["loss"],
+            "learning_rate": cur_epoch_progress_data["learning_rate"],
+            "weights": [0, 0],
+            "bias": 0,
+        }
 
-        # 데이터 저장
-        self.epoch_history.append(formatted_data)
+        if cur_epoch_progress_data["model_ref"] is not None:
+            model = cur_epoch_progress_data["model_ref"]
+
+            # copy weights and bias
+            progress_data["weights"] = model.layers[0].weights.flatten().tolist()
+            progress_data["bias"] = model.layers[0].biases[0]
+
+        self.epoch_progress_history.append(progress_data)
 
         # 현재 에포크 정보 출력
         print(
-            f"Epoch {formatted_data['epoch']}: Loss {formatted_data.get('total_error', 0.0):.6f}"
+            f"Epoch {cur_epoch_progress_data['epoch']}: Loss {cur_epoch_progress_data['loss']:.6f}"
         )
-        print(f"Weights: {formatted_data['weights']}, Bias: {formatted_data['bias']}")
+
+        print(f"Weights: {progress_data['weights']}," f" Bias: {progress_data['bias']}")

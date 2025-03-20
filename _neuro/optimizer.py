@@ -15,8 +15,7 @@ class ProgressData(TypedDict):
     epoch: int  # 현재 에포크 번호
     loss: float  # 현재 에포크의 손실값
     learning_rate: float  # 현재 학습률
-    weights: list[NDArray | None]  # 각 레이어의 가중치 배열 리스트
-    biases: list[NDArray | None]  # 각 레이어의 편향 배열 리스트
+    model_ref: Self  # 현재 모델 참조
 
 
 # 콜백 함수 타입 정의 - 더 구체적인 타입 적용
@@ -422,14 +421,7 @@ class OptimizerMixin(Generic[T]):
                     "epoch": epoch,
                     "loss": epoch_loss,
                     "learning_rate": self._learning_rate,
-                    "weights": [
-                        layer.weights.copy() if layer.weights is not None else None
-                        for layer in self.layers
-                    ],
-                    "biases": [
-                        layer.biases.copy() if layer.biases is not None else None
-                        for layer in self.layers
-                    ],
+                    "model_ref": self,
                 }
 
                 # 모든 콜백 함수 호출
