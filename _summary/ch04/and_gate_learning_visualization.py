@@ -455,9 +455,11 @@ class AndGateLearningVisualization(Scene):
         """주어진 가중치와 바이어스로 예측 결과를 반환합니다."""
 
         # '1개 레이어'로만 구성된 모델을 'NN.load' 메쏘드를 이용하여 간단하게 생성
-        model = NN.load(
-            weights=np.array(weights).reshape(-1, 1), biases=np.array([bias])
-        ).activation(sigmoid)
+        model = (
+            NN.create()
+            .layer(weights=np.array(weights).reshape(-1, 1), biases=np.array([bias]))
+            .activation(sigmoid)
+        )
 
         # 입력에 대한 예측
         # 시그모이드 출력을 0/1로 변환
