@@ -14,10 +14,12 @@ from optimizer import ProgressData
 
 
 class ProgressDataSnapshot(TypedDict):
+    """'퍼셉트론 1개'를 사용하여 'AND 게이트 학습'시 진행 상태 저장을 위한 타입"""
+
     epoch: int  # 현재 에포크 번호
     loss: float  # 현재 에포크의 손실값
     learning_rate: float  # 현재 학습률
-    weights: list[float]  # 현재 가중치
+    weights: tuple[float, float]  # 현재 가중치
     bias: float  # 현재 바이어스
 
 
@@ -676,7 +678,7 @@ class AndGateLearningVisualization(Scene):
             "epoch": cur_epoch_progress_data["epoch"],
             "loss": cur_epoch_progress_data["loss"],
             "learning_rate": cur_epoch_progress_data["learning_rate"],
-            "weights": [0, 0],
+            "weights": (0, 0),
             "bias": 0,
         }
 
@@ -684,7 +686,7 @@ class AndGateLearningVisualization(Scene):
             model = cur_epoch_progress_data["model_ref"]
 
             # copy weights and bias
-            progress_data["weights"] = model.layers[0].weights.flatten().tolist()
+            progress_data["weights"] = tuple(model.layers[0].weights.flatten())
             progress_data["bias"] = model.layers[0].biases[0]
 
         self.epoch_progress_history.append(progress_data)
