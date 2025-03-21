@@ -128,11 +128,20 @@ class SaveLoadMixin(Generic[T]):
             )
 
     @classmethod
-    def load(cls, filepath: str) -> T:
-        """저장된 모델을 로드합니다.
+    def load(
+        cls,
+        filepath: str = None,
+        weights: NDArray = None,
+        biases: NDArray = None,
+        activation: str | Callable[[NDArray], NDArray] | None = None,
+    ) -> T:
+        """저장된 모델을 로드하거나 가중치와 바이어스로 단일 층 모델을 생성합니다.
 
         Args:
-            filepath: 로드할 파일 경로
+            filepath: 로드할 파일 경로 (None인 경우 weights, biases로 모델 생성)
+            weights: 직접 제공하는 가중치 행렬 (filepath가 None일 때 사용)
+            biases: 직접 제공하는 바이어스 벡터 (filepath가 None일 때 사용)
+            activation: 활성화 함수 이름 또는 함수 객체 (filepath가 None일 때 사용)
 
         Returns:
             로드된 모델 인스턴스
@@ -141,11 +150,42 @@ class SaveLoadMixin(Generic[T]):
             FileNotFoundError: 파일이 존재하지 않는 경우
             ValueError: 지원하지 않는 파일 형식인 경우
         """
-        if not os.path.exists(filepath):
-            raise FileNotFoundError(f"파일을 찾을 수 없습니다: {filepath}")
-
         # 타입 힌트를 위한 캐스팅
         model_class = cast(Any, cls)
+
+        # 가중치와 바이어스로 직접 단일 층 모델 생성
+        if filepath is None and weights is not None:
+            if biases is None:
+                # 바이어스가 제공되지 않은 경우 0으로 초기화
+                biases = np.zeros(weights.shape[1])
+
+            model = model_class.create()
+
+            # 출력 크기는 가중치 행렬의 열 수
+            output_size = weights.shape[1]
+            model.layer(output_size)
+
+            # 마지막으로 추가된 레이어
+            current_layer = model.layers[-1]
+
+            # 가중치와 바이어스 설정
+            current_layer.weights = weights
+            current_layer.biases = biases
+
+            # 활성화 함수 설정
+            if isinstance(activation, str):
+                current_layer.activation = cls._get_activation_function(activation)
+            else:
+                current_layer.activation = activation
+
+            print(
+                f"가중치와 바이어스로 단일 층 모델이 생성되었습니다. (출력 크기: {output_size})"
+            )
+            return model
+
+        # 기존 파일에서 모델 로드 코드
+        if not os.path.exists(filepath):
+            raise FileNotFoundError(f"파일을 찾을 수 없습니다: {filepath}")
 
         if filepath.endswith(".npz"):
             # NumPy .npz 형식에서 로드

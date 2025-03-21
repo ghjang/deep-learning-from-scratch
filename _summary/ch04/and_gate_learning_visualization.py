@@ -1,6 +1,7 @@
 import sys
 import os
 import numpy as np
+import operator as op
 from typing import TypedDict
 from manim import *
 
@@ -45,6 +46,7 @@ class AndGateLearningVisualization(Scene):
     REGION_COLOR = RED
     EQUATION_SCALE = 0.5
     TEXT_Z_INDEX = 10
+    EPSILON = 1e-10  # 0에 가까운 값 판단용 상수
 
     # 색상 관련 상수
     DOT_COLORS = {0: RED, 1: GREEN}
@@ -57,6 +59,11 @@ class AndGateLearningVisualization(Scene):
     }
     CORRECT_COLOR = GREEN  # 예측 성공 색상
     WRONG_COLOR = RED  # 예측 실패 색상
+
+    # 히스토리 필터링 상수
+    LOSS_THRESHOLD = 0.01  # 손실 값의 최소 변화량
+
+    epoch_progress_history: list[ProgressDataSnapshot]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -227,13 +234,15 @@ class AndGateLearningVisualization(Scene):
 
         return text_group
 
-    def _create_equation_text(self, weights: list, bias: float) -> MathTex:
+    def _create_equation_text(
+        self, weights: tuple[float, float], bias: float
+    ) -> MathTex:
         """가중치와 바이어스로부터 함수식 레이텍을 생성합니다."""
         w1, w2 = weights
         b = bias
 
-        if abs(w2) < 1e-10:  # 수직선의 경우
-            if abs(w1) < 1e-10:
+        if abs(w2) < self.EPSILON:  # 수직선의 경우
+            if abs(w1) < self.EPSILON:
                 return None
 
             # x = -b/w1 형태
@@ -243,7 +252,7 @@ class AndGateLearningVisualization(Scene):
                 + ")}{"
                 + self._format_float(w1)
                 + "}\\right\\}",
-                color=self.LINE_COLOR,  # 노란색으로 변경
+                color=self.LINE_COLOR,
             )
 
             # 수직선이므로 간소화된 수식 추가
@@ -271,7 +280,7 @@ class AndGateLearningVisualization(Scene):
                 + ")}{"
                 + self._format_float(w2)
                 + "}\\right\\}",
-                color=self.LINE_COLOR,  # 노란색으로 변경
+                color=self.LINE_COLOR,
             )
 
             # 실제 값으로 계산된 간소화된 수식 추가
@@ -311,16 +320,20 @@ class AndGateLearningVisualization(Scene):
         return self._get_safe_x_position(x_at_target_y)
 
     def _draw_decision_boundary_and_region(
-        self, number_plane: NumberPlane, weights: list, bias: float
+        self,
+        number_plane: NumberPlane,
+        weights: tuple[float, float],
+        bias: float,
+        loss: float,
     ) -> tuple[VMobject, VMobject, VMobject]:
         """결정 경계선과 아래쪽 영역, 함수식을 그립니다."""
         w1, w2 = weights
         b = bias
 
-        print(f"Drawing decision boundary: w1={w1}, w2={w2}, b={b}")
+        print(f"Drawing decision boundary: w1={w1}, w2={w2}, b={b}, loss={loss}")
 
         # 모든 가중치와 바이어스가 0인 경우 - y = 0 수평선
-        if abs(w1) < 1e-10 and abs(w2) < 1e-10 and abs(b) < 1e-10:
+        if abs(w1) < self.EPSILON and abs(w2) < self.EPSILON and abs(b) < self.EPSILON:
             # y = 0 형태의 수평선
             line = number_plane.plot_line_graph(
                 x_values=self.X_RANGE,
@@ -365,13 +378,13 @@ class AndGateLearningVisualization(Scene):
             return line, region, equation
 
         # 특수 케이스 처리: 수직선 (w2 = 0, w1 ≠ 0)
-        if abs(w2) < 1e-10:
+        if abs(w2) < self.EPSILON:
             # x = -b/w1 형태의 수직선
             x_val = -b / w1
             line = number_plane.plot_line_graph(
                 x_values=[x_val, x_val],
                 y_values=self.Y_RANGE,
-                line_color=YELLOW,
+                line_color=self.LINE_COLOR,
                 add_vertex_dots=False,
             )
 
@@ -432,35 +445,50 @@ class AndGateLearningVisualization(Scene):
 
         return line, region, equation
 
-    def _predict_AND_gate_output_with_weights(self, weights: list, bias: float, inputs):
+    def _predict_AND_gate_output(
+        self,
+        weights: tuple[float, float],
+        bias: float,
+        loss: float,
+        inputs: tuple[float, float],
+    ) -> int:
         """주어진 가중치와 바이어스로 예측 결과를 반환합니다."""
-        # 간단한 모델 생성
-        # TODO: layer를 생성하면서 웨이트 값을 직접 설정할 수 있는 방법을 추가할지 고려할 것. 간단한 상황에서 유용할 수 있을 것 같음.
-        model = NN.create().layer(1)
 
-        # 첫 번째 레이어 가중치와 바이어스 설정
-        layer = model.layers[0]
-        layer.weights = np.array(weights).reshape(-1, 1)
-        layer.biases = np.array([bias])
+        # '1개 레이어'로만 구성된 모델을 'NN.load' 메쏘드를 이용하여 간단하게 생성
+        model = NN.load(
+            weights=np.array(weights).reshape(-1, 1), biases=np.array([bias])
+        ).activation(sigmoid)
 
         # 입력에 대한 예측
         # 시그모이드 출력을 0/1로 변환
-        threshold = 0.9  # 시그모이드 출력 임계값
+        thresholds = {
+            (0, 0): (0, 0.1, op.le),
+            (0, 1): (0, 0.1, op.le),
+            (1, 0): (0, 0.1, op.le),
+            (1, 1): (1, 0.9, op.ge),
+        }
+
+        target_value, threshold, comparator = thresholds[inputs]
+
         output = model.forward(np.array(inputs))
-        output = output[0, 0]  # 1개의 출력값만을 갖는 2D 배열을 1D로 변환
+        output = output[0, 0]  # '1개의 출력값'만을 갖는 2D 배열 요소를 스칼라로 변환
 
-        return 1 if output > threshold else 0
+        print(f"loss: {loss}, output: {output}, threshold: {threshold}")
 
-    def _update_data_point_colors(self, weights, bias):
+        # loss가 충분히 작은 경우에는 threshold값에 도달한 것으로 간주한다.
+        SMALL_LOSS_THRESHOLD = 0.001
+        output = threshold if loss <= SMALL_LOSS_THRESHOLD else output
+
+        return target_value if comparator(output, threshold) else 1 - target_value
+
+    def _update_data_point_colors(self, weights, bias, loss) -> list[Animation]:
         """현재 가중치와 바이어스로 예측 결과에 따라 데이터 포인트 색상을 업데이트합니다."""
         animations = []
 
         for point in self.data_points:
             x, y = point["coords"]
             target = point["output"]
-            prediction = self._predict_AND_gate_output_with_weights(
-                weights, bias, [x, y]
-            )
+            prediction = self._predict_AND_gate_output(weights, bias, loss, (x, y))
 
             # 예측 성공/실패에 따른 색상 결정
             new_color = self.CORRECT_COLOR if prediction == target else self.WRONG_COLOR
@@ -485,17 +513,50 @@ class AndGateLearningVisualization(Scene):
 
     def _display_training_history(self, number_plane: NumberPlane) -> None:
         """트레이닝 히스토리 데이터를 사용하여 결정 경계선 변화를 애니메이션으로 표시합니다."""
-        history_len = len(self.epoch_progress_history)
+
+        # loss 값 차이가 LOSS_THRESHOLD 미만인 구간에서는 첫 번째 값만 남기고 필터링
+        filtered_history = []
+        prev_loss = None
+        prev_index = -1
+
+        for i, data in enumerate(self.epoch_progress_history):
+            current_loss = data["loss"]
+
+            # 첫 번째 항목은 무조건 포함
+            if i == 0 or prev_loss is None:
+                filtered_history.append(data)
+                prev_loss = current_loss
+                prev_index = i
+                continue
+
+            # loss 차이가 LOSS_THRESHOLD 이상이면 해당 항목 포함
+            if abs(current_loss - prev_loss) >= self.LOSS_THRESHOLD:
+                filtered_history.append(data)
+                prev_loss = current_loss
+                prev_index = i
+            # 마지막 히스토리 항목은 포함
+            elif i == len(self.epoch_progress_history) - 1 and prev_index != i:
+                filtered_history.append(data)
+
+        print(
+            f"원본 히스토리 길이: {len(self.epoch_progress_history)}, 필터링 후 길이: {len(filtered_history)}"
+        )
+
+        # 필터링된 히스토리 사용
+        history_len = len(filtered_history)
         if history_len <= 0:
             return
 
         # 초기 요소들 생성 (에포크 0)
-        first_data = self.epoch_progress_history[0]
+        first_data = filtered_history[0]
 
         # 직선과 영역은 생성하되 화면에 표시하지 않음
         current_line, current_region, current_equation = (
             self._draw_decision_boundary_and_region(
-                number_plane, first_data["weights"], first_data["bias"]
+                number_plane,
+                first_data["weights"],
+                first_data["bias"],
+                first_data["loss"],
             )
         )
         current_text = self._create_epoch_text(first_data)
@@ -506,10 +567,13 @@ class AndGateLearningVisualization(Scene):
 
         # 에포크 1부터는 시각적 요소 모두 표시
         if history_len > 1:
-            epoch_data = self.epoch_progress_history[1]
+            epoch_data = filtered_history[1]
             new_line, new_region, new_equation = (
                 self._draw_decision_boundary_and_region(
-                    number_plane, epoch_data["weights"], epoch_data["bias"]
+                    number_plane,
+                    epoch_data["weights"],
+                    epoch_data["bias"],
+                    epoch_data["loss"],
                 )
             )
             new_text = self._create_epoch_text(epoch_data)
@@ -526,8 +590,11 @@ class AndGateLearningVisualization(Scene):
                 x, y = point["coords"]
                 target = point["output"]
                 # NeuralNet을 사용한 예측
-                prediction = self._predict_AND_gate_output_with_weights(
-                    epoch_data["weights"], epoch_data["bias"], [x, y]
+                prediction = self._predict_AND_gate_output(
+                    epoch_data["weights"],
+                    epoch_data["bias"],
+                    epoch_data["loss"],
+                    (x, y),
                 )
                 # 색상 설정
                 new_color = (
@@ -564,17 +631,20 @@ class AndGateLearningVisualization(Scene):
 
         # 두 번째 에포크부터는 ReplacementTransform 사용
         for i in range(2, history_len):
-            epoch_data = self.epoch_progress_history[i]
+            epoch_data = filtered_history[i]
             new_line, new_region, new_equation = (
                 self._draw_decision_boundary_and_region(
-                    number_plane, epoch_data["weights"], epoch_data["bias"]
+                    number_plane,
+                    epoch_data["weights"],
+                    epoch_data["bias"],
+                    epoch_data["loss"],
                 )
             )
             new_text = self._create_epoch_text(epoch_data)
 
             # 데이터 포인트 색상 업데이트 애니메이션
             color_animations = self._update_data_point_colors(
-                epoch_data["weights"], epoch_data["bias"]
+                epoch_data["weights"], epoch_data["bias"], epoch_data["loss"]
             )
 
             if new_line and current_line:
@@ -606,8 +676,11 @@ class AndGateLearningVisualization(Scene):
                 for point in self.data_points:
                     x, y = point["coords"]
                     target = point["output"]
-                    prediction = self._predict_AND_gate_output_with_weights(
-                        epoch_data["weights"], epoch_data["bias"], [x, y]
+                    prediction = self._predict_AND_gate_output(
+                        epoch_data["weights"],
+                        epoch_data["bias"],
+                        epoch_data["loss"],
+                        (x, y),
                     )
                     if prediction != target:  # 하나라도 불일치하면 False
                         all_correct = False
