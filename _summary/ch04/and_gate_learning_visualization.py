@@ -13,6 +13,9 @@ from neural_net import NeuralNet as NN
 from activation import sigmoid
 from optimizer import ProgressData
 
+from m_and_gate_logic_table import MANDGateLogicTable
+from m_single_layper_perceptron import MSingleLayerPerceptron
+
 
 class ProgressDataSnapshot(TypedDict):
     """'퍼셉트론 1개'를 사용하여 'AND 게이트 학습'시 진행 상태 저장을 위한 타입"""
@@ -29,6 +32,9 @@ class AndGateLearningVisualization(Scene):
     LEARNING_RATE = 0.25  # 클래스 상수 값을 실제 사용할 값으로 변경
     EPOCHS = 10000  # 시각화를 위한 에포크 수
     INTERVAL = 20  # 에포크 간격
+
+    TRUTH_TABLE_ZOOM_OUT_SCALE = 0.4
+    PERCEPTRON_NETWORK_ZOOM_OUT_SCALE = 0.55
 
     # 좌표평면 관련 상수
     PLANE_SCALE = 1.9
@@ -88,7 +94,28 @@ class AndGateLearningVisualization(Scene):
         self._setup_AND_gate_model()
 
     def construct(self):
-        self.next_section("Initial Setup")
+        self.next_section("Initial Setup", skip_animations=False)
+
+        # AND 게이트 테이블 생성 및 인스턴스 변수로 저장 (다른 메서드에서 접근 가능하도록)
+        self.and_gate_table = MANDGateLogicTable().set_z_index(10)
+        self.add(self.and_gate_table)
+        self.wait(2)
+        self.play(
+            self.and_gate_table.animate.scale(self.TRUTH_TABLE_ZOOM_OUT_SCALE).to_edge(
+                DL
+            )
+        )
+
+        perceptron_network = MSingleLayerPerceptron().set_z_index(10).shift(RIGHT * 2.2)
+        self.add(perceptron_network)
+        self.wait(2)
+        self.play(
+            perceptron_network.animate.scale(
+                self.PERCEPTRON_NETWORK_ZOOM_OUT_SCALE
+            ).to_edge(DR)
+        )
+
+        self.next_section("Show Data Points", skip_animations=False)
 
         # 'x1, x2' 데이터 표시를 위한 플레인 생성
         number_plane = self._create_number_plane()
@@ -97,8 +124,10 @@ class AndGateLearningVisualization(Scene):
         # AND 게이트 입력값 4개에 대한 포인트 생성 및 표시
         self._create_and_display_data_points()
 
+        self.wait()
+
         # 트레이닝 히스토리 표시 섹션
-        self.next_section("Show Training History")
+        self.next_section("Show Training History", skip_animations=False)
 
         # 트레이닝 히스토리 데이터를 사용하여 결정 경계선 표시
         self._display_training_history(number_plane)
@@ -110,7 +139,7 @@ class AndGateLearningVisualization(Scene):
         """좌표 평면을 생성합니다."""
         return NumberPlane(
             axis_config={"stroke_opacity": 0.5},
-            background_line_style={"stroke_opacity": 0.5},
+            background_line_style={"stroke_opacity": 0.25},
         ).scale(self.PLANE_SCALE)
 
     def _create_and_display_data_points(self) -> None:
@@ -451,6 +480,7 @@ class AndGateLearningVisualization(Scene):
         bias: float,
         loss: float,
         inputs: tuple[float, float],
+        update_table: bool = False,
     ) -> int:
         """주어진 가중치와 바이어스로 예측 결과를 반환합니다."""
 
@@ -474,6 +504,7 @@ class AndGateLearningVisualization(Scene):
 
         output = model.forward(np.array(inputs))
         output = output[0, 0]  # '1개의 출력값'만을 갖는 2D 배열 요소를 스칼라로 변환
+        org_approx_output = output
 
         print(f"loss: {loss}, output: {output}, threshold: {threshold}")
 
@@ -481,7 +512,34 @@ class AndGateLearningVisualization(Scene):
         SMALL_LOSS_THRESHOLD = 0.001
         output = threshold if loss <= SMALL_LOSS_THRESHOLD else output
 
-        return target_value if comparator(output, threshold) else 1 - target_value
+        predicted = target_value if comparator(output, threshold) else 1 - target_value
+
+        # AND 게이트 테이블 업데이트 (요청된 경우)
+        if update_table and hasattr(self, "and_gate_table"):
+            # 입력에 해당하는 행 인덱스 매핑 (2 ~ 5는 데이터 행에 해당)
+            row_index_map = {
+                (0, 0): 2,  # 첫 번째 데이터 행
+                (0, 1): 3,  # 두 번째 데이터 행
+                (1, 0): 4,  # 세 번째 데이터 행
+                (1, 1): 5,  # 네 번째 데이터 행
+            }
+            row_idx = row_index_map[inputs]
+
+            # 결과에 따라 녹색/빨간색 마크 선택
+            mark_type = "green_circle" if predicted == target_value else "red_circle"
+
+            # 예측 값을 테이블 셀에 업데이트
+            org_approx_output_tex = f"\\approx {org_approx_output:.6f}"
+            self.and_gate_table.update_result_cell(
+                row_idx,
+                org_approx_output_tex,
+                scene=self,
+                mark_type=mark_type,
+                mark_buff=0.2,
+                current_scale=self.TRUTH_TABLE_ZOOM_OUT_SCALE,
+            )
+
+        return predicted
 
     def _update_data_point_colors(self, weights, bias, loss) -> list[Animation]:
         """현재 가중치와 바이어스로 예측 결과에 따라 데이터 포인트 색상을 업데이트합니다."""
@@ -490,7 +548,9 @@ class AndGateLearningVisualization(Scene):
         for point in self.data_points:
             x, y = point["coords"]
             target = point["output"]
-            prediction = self._predict_AND_gate_output(weights, bias, loss, (x, y))
+            prediction = self._predict_AND_gate_output(
+                weights, bias, loss, (x, y), update_table=True
+            )
 
             # 예측 성공/실패에 따른 색상 결정
             new_color = self.CORRECT_COLOR if prediction == target else self.WRONG_COLOR
@@ -591,12 +651,13 @@ class AndGateLearningVisualization(Scene):
             for point in self.data_points:
                 x, y = point["coords"]
                 target = point["output"]
-                # NeuralNet을 사용한 예측
+                # NeuralNet을 사용한 예측 및 테이블 업데이트
                 prediction = self._predict_AND_gate_output(
                     epoch_data["weights"],
                     epoch_data["bias"],
                     epoch_data["loss"],
                     (x, y),
+                    update_table=True,  # 테이블 업데이트 활성화
                 )
                 # 색상 설정
                 new_color = (
