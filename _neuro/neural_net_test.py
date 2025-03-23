@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from neuro import NeuralNet as NN
+from neural_net import NeuralNet as NN
 from activation import sigmoid
 
 

@@ -9,7 +9,7 @@ from manim import *
 sys.path.append(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "../../_neuro"))
 )
-from neuro import NeuralNet as NN
+from neural_net import NeuralNet as NN
 from activation import sigmoid
 from optimizer import ProgressData
 
