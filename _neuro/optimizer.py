@@ -95,7 +95,7 @@ class OptimizerMixin(Generic[T]):
        for i in range(0, n_samples, self._batch_size):
            x_batch = x_shuffled[i : i + self._batch_size]
            y_batch = y_shuffled[i : i + self._batch_size]
-           batch_loss = self._train_step(x_batch, y_batch)
+           batch_loss = self._train_step(epoch, x_batch, y_batch)
        ```
 
     4. 사용 예시:
@@ -331,11 +331,12 @@ class OptimizerMixin(Generic[T]):
             if "biases" in layer_grads and layer.biases is not None:
                 layer.biases -= learning_rate * layer_grads["biases"]
 
-    def _train_step(self, x: NDArray, y: NDArray) -> float:
+    def _train_step(self, epoch: int, x: NDArray, y: NDArray) -> float:
         """
         단일 학습 단계를 수행합니다.
 
         Args:
+            epoch: 현재 에포크 번호
             x: 입력 데이터
             y: 정답 레이블
 
@@ -344,6 +345,19 @@ class OptimizerMixin(Generic[T]):
         """
         # 순방향 전파
         y_pred = self.forward(x)
+
+        # 첫 번째 에포크에서만 콜백 함수를 호출하여
+        # 최초 업데이트 전의 초기 신경망 상태를 전달
+        if epoch == 0 and self._callbacks:
+            callback_info: ProgressData = {
+                "epoch": 0, # '0'은 '학습 진행전'의 초기 신경망 상태를 의미
+                "loss": 0,
+                "learning_rate": self._learning_rate,
+                "model_ref": self,
+            }
+
+            for callback_fn in self._callbacks:
+                callback_fn(callback_info)
 
         # 손실 계산 - LossMixin의 _loss_type 사용
         loss = self.compute_loss(y_pred, y)
@@ -401,7 +415,7 @@ class OptimizerMixin(Generic[T]):
                 y_batch = y_shuffled[i : i + self._batch_size]
 
                 # 단일 배치에 대한 훈련 단계 수행
-                batch_loss = self._train_step(x_batch, y_batch)
+                batch_loss = self._train_step(epoch, x_batch, y_batch)
                 epoch_loss += batch_loss * len(x_batch) / n_samples
 
             history.append(epoch_loss)
@@ -412,13 +426,15 @@ class OptimizerMixin(Generic[T]):
             )
 
             if self._verbose and is_verbose_epoch:
-                print(f"에포크 {epoch+1}/{self._epochs}, 손실: {epoch_loss:.6f}")
+                print(f"에포크 {epoch + 1}/{self._epochs}, 손실: {epoch_loss:.6f}")
 
             # 콜백 함수 호출 - verbose 인터벌과 동일하게 적용
             if self._callbacks and is_verbose_epoch:
                 # 현재 모델 상태 정보 수집
+                # ; callback의 입장에서는 '0'은 '학습 진행전'의 초기 신경망 상태를 의미하고,
+                #   '1'부터는 '학습 진행중'의 신경망 상태를 의미함.
                 callback_info: ProgressData = {
-                    "epoch": epoch,
+                    "epoch": epoch + 1,
                     "loss": epoch_loss,
                     "learning_rate": self._learning_rate,
                     "model_ref": self,

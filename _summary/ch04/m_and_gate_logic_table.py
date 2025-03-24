@@ -51,9 +51,9 @@ class MANDGateLogicTable(VGroup):
         mark_type=None,
         mark_buff=0.1,
         current_scale=1,
-    ):
+    ) -> AnimationGroup | tuple | None:
         """
-        특정 행의 결과 셀 값을 업데이트
+        특정 행의 결과 셀 값을 업데이트합니다.
 
         Parameters:
         -----------
@@ -69,11 +69,15 @@ class MANDGateLogicTable(VGroup):
             마크 유형 ('red_circle', 'green_circle', None)
         mark_buff : float, optional
             마크 표시 간격 (기본값: 0.1)
+        current_scale : float, optional
+            현재 테이블 스케일 (기본값: 1.0)
 
         Returns:
         --------
-        Animation 또는 None:
-            scene이 None이고 animate=True인 경우 애니메이션 객체 반환
+        AnimationGroup | tuple | None:
+            - 씬이 제공되고 animate=True인 경우: AnimationGroup 객체 반환
+            - 씬이 제공되지 않은 경우: (new_cell, old_cell, [old_mark], [new_mark]) 튜플 반환
+            - 유효하지 않은 행 인덱스이거나 업데이트 불필요: None 반환
         """
         # 행 인덱스 검증 (1-5 범위)
         if 1 <= row_idx <= 5:

@@ -35,6 +35,7 @@ class AndGateLearningVisualization(Scene):
 
     TRUTH_TABLE_ZOOM_OUT_SCALE = 0.4
     PERCEPTRON_NETWORK_ZOOM_OUT_SCALE = 0.55
+    CORNER_BUFF = 0.25
 
     # 좌표평면 관련 상수
     PLANE_SCALE = 1.9
@@ -82,9 +83,10 @@ class AndGateLearningVisualization(Scene):
         self.data_labels = {}
 
     def setup(self):
+        # 실제 가중치값 표현이 아닌 문자로 표시하기 위해 epoch -1로 초기화
         self._append_training_epoch_progress_data(
             {
-                "epoch": 0,
+                "epoch": -1,
                 "loss": 0,
                 "learning_rate": self.LEARNING_RATE,
                 "model_ref": None,
@@ -101,9 +103,9 @@ class AndGateLearningVisualization(Scene):
         self.add(self.and_gate_table)
         self.wait(2)
         self.play(
-            self.and_gate_table.animate.scale(self.TRUTH_TABLE_ZOOM_OUT_SCALE).to_edge(
-                DL
-            )
+            self.and_gate_table.animate.scale(
+                self.TRUTH_TABLE_ZOOM_OUT_SCALE
+            ).to_corner(DL, buff=self.CORNER_BUFF)
         )
 
         perceptron_network = MSingleLayerPerceptron().set_z_index(10).shift(RIGHT * 2.2)
@@ -112,7 +114,7 @@ class AndGateLearningVisualization(Scene):
         self.play(
             perceptron_network.animate.scale(
                 self.PERCEPTRON_NETWORK_ZOOM_OUT_SCALE
-            ).to_edge(DR)
+            ).to_corner(DR, buff=self.CORNER_BUFF)
         )
 
         self.next_section("Show Data Points", skip_animations=False)
@@ -199,14 +201,19 @@ class AndGateLearningVisualization(Scene):
 
     def _create_epoch_text(self, epoch_data: ProgressDataSnapshot) -> VGroup:
         """에포크 데이터를 표시하는 텍스트 그룹을 생성합니다."""
-        # 에포크 0인지 확인
+        is_dummy_epoch = epoch_data["epoch"] == -1
         is_epoch_zero = epoch_data["epoch"] == 0
+
+        epoch = "" if is_dummy_epoch else epoch_data["epoch"]
+        w_1 = "w_1" if is_dummy_epoch else self._format_float(epoch_data["weights"][0])
+        w_2 = "w_2" if is_dummy_epoch else self._format_float(epoch_data["weights"][1])
+        b = "b" if is_dummy_epoch else self._format_float(epoch_data["bias"])
 
         # 모든 텍스트 요소를 하나의 리스트로 생성
         text_elements = [
             # 기본 정보 (항상 표시)
             MathTex(
-                f"\\textrm{{Epoch: }}{epoch_data["epoch"]}",
+                f"\\textrm{{Epoch: }}{epoch}",
                 font_size=self.FONT_SIZE,
                 color=self.TEXT_LABEL_COLOR,
             ),
@@ -216,18 +223,17 @@ class AndGateLearningVisualization(Scene):
                 color=self.TEXT_LABEL_COLOR,
             ),
             MathTex(
-                f"\\textrm{{Weights: }}[{self._format_float(epoch_data["weights"][0])}, {self._format_float(epoch_data["weights"][1])}]",
+                f"\\textrm{{Weights: }}[{w_1}, {w_2}]",
                 font_size=self.FONT_SIZE,
                 color=self.TEXT_LABEL_COLOR,
             ),
             MathTex(
-                f"\\textrm{{Bias: }}{self._format_float(epoch_data["bias"])}",
+                f"\\textrm{{Bias: }}{b}",
                 font_size=self.FONT_SIZE,
                 color=self.TEXT_LABEL_COLOR,
             ),
         ]
 
-        # 추가 정보 (에포크 0에서는 숨김)
         additional_texts = [
             # Loss 텍스트
             MathTex(
@@ -235,30 +241,29 @@ class AndGateLearningVisualization(Scene):
                 font_size=self.FONT_SIZE,
                 color=self.TEXT_LABEL_COLOR,
             ),
-            # 가중치와 바이어스 업데이트 일반식
+            # '순전파, 수치미분'을 사용하는 방식에서 '경사 하강법'에 의한 다음 수치 업데이트 표현식
             MathTex(
-                "\\Delta w_i = \\eta \\cdot \\nabla L \\cdot x_i,\\,\\,\\,\\Delta b = \\eta \\cdot \\nabla L",
+                "w_i = w_i - \\eta \\cdot \\frac{\\partial L}{\\partial w_i}",
                 font_size=self.FONT_SIZE,
                 color=self.TEXT_LABEL_COLOR,
             ),
-            # 일반화된 함수식
             MathTex(
-                "y = \\left\\{\\frac{-(w_1)}{w_2}\\right\\}\\cdot x + \\left\\{\\frac{-(b)}{w_2}\\right\\}",
+                "b = b - \\eta \\cdot \\frac{\\partial L}{\\partial b}",
                 font_size=self.FONT_SIZE,
                 color=self.TEXT_LABEL_COLOR,
             ),
         ]
 
-        # 에포크 0에서는 추가 정보 텍스트를 숨기고, 그 외에는 모두 표시
-        if is_epoch_zero:
-            # 에포크 0에서는 기본 정보만 표시
+        if is_dummy_epoch or is_epoch_zero:
             all_texts = text_elements
         else:
-            # 나머지 에포크에서는 모든 정보 표시
             all_texts = text_elements + additional_texts
 
-        # 모든 텍스트를 그룹으로 결합하고 좌측 정렬로 배치
-        text_group = VGroup(*all_texts).arrange(DOWN, aligned_edge=LEFT).to_corner(UL)
+        text_group = (
+            VGroup(*all_texts)
+            .arrange(DOWN, aligned_edge=LEFT)
+            .to_corner(UL, buff=self.CORNER_BUFF)
+        )
         text_group.set_z_index(self.TEXT_Z_INDEX)
 
         return text_group
@@ -267,11 +272,19 @@ class AndGateLearningVisualization(Scene):
         self, weights: tuple[float, float], bias: float
     ) -> MathTex:
         """가중치와 바이어스로부터 함수식 레이텍을 생성합니다."""
-        w1, w2 = weights
+        # 일반화된 함수식
+        boundary_line_formula = (
+            MathTex(
+                "y = \\left\\{\\frac{-(w_1)}{w_2}\\right\\}\\cdot x + \\left\\{\\frac{-(b)}{w_2}\\right\\}",
+                color=self.LINE_COLOR,
+            ),
+        )
+
+        w_1, w_2 = weights
         b = bias
 
-        if abs(w2) < self.EPSILON:  # 수직선의 경우
-            if abs(w1) < self.EPSILON:
+        if abs(w_2) < self.EPSILON:  # 수직선의 경우
+            if abs(w_1) < self.EPSILON:
                 return None
 
             # x = -b/w1 형태
@@ -279,42 +292,44 @@ class AndGateLearningVisualization(Scene):
                 "x = \\left\\{\\frac{-("
                 + self._format_float(b)
                 + ")}{"
-                + self._format_float(w1)
+                + self._format_float(w_1)
                 + "}\\right\\}",
                 color=self.LINE_COLOR,
             )
 
             # 수직선이므로 간소화된 수식 추가
-            x_val = -b / w1
+            x_val = -b / w_1
             simplified_eq = MathTex(
                 f"x = {self._format_float(x_val)}",
                 color=self.LINE_COLOR,
             )
 
             # 두 수식을 그룹으로 묶음
-            equation_group = VGroup(equation, simplified_eq).arrange(DOWN, buff=0.2)
+            equation_group = VGroup(
+                boundary_line_formula, equation, simplified_eq
+            ).arrange(DOWN, buff=0.2)
 
         else:
             # y = (-w1/w2)x + (-b/w2) 형태
             equation = MathTex(
                 "y = "
                 "\\left\\{\\frac{-("
-                + self._format_float(w1)
+                + self._format_float(w_1)
                 + ")}{"
-                + self._format_float(w2)
+                + self._format_float(w_2)
                 + "}\\right\\}"
                 "\\cdot x"
                 "+\\left\\{\\frac{-("
                 + self._format_float(b)
                 + ")}{"
-                + self._format_float(w2)
+                + self._format_float(w_2)
                 + "}\\right\\}",
                 color=self.LINE_COLOR,
             )
 
             # 실제 값으로 계산된 간소화된 수식 추가
-            slope = -w1 / w2
-            y_intercept = -b / w2
+            slope = -w_1 / w_2
+            y_intercept = -b / w_2
 
             sign = "+" if y_intercept >= 0 else "-"
             simplified_eq = MathTex(
@@ -323,11 +338,15 @@ class AndGateLearningVisualization(Scene):
             )
 
             # 두 수식을 그룹으로 묶음
-            equation_group = VGroup(equation, simplified_eq).arrange(DOWN, buff=0.5)
+            equation_group = VGroup(
+                boundary_line_formula, equation, simplified_eq
+            ).arrange(DOWN, buff=0.5)
 
         # 방정식을 우상단에 배치
         equation_group.scale(self.EQUATION_SCALE)
-        equation_group.to_corner(UR, buff=0.5)  # 우상단(Upper Right)에 배치
+        equation_group.to_corner(
+            UR, buff=self.CORNER_BUFF
+        )  # 우상단(Upper Right)에 배치
         equation_group.set_z_index(self.TEXT_Z_INDEX)
 
         return equation_group
@@ -480,7 +499,6 @@ class AndGateLearningVisualization(Scene):
         bias: float,
         loss: float,
         inputs: tuple[float, float],
-        update_table: bool = False,
     ) -> int:
         """주어진 가중치와 바이어스로 예측 결과를 반환합니다."""
 
@@ -514,42 +532,75 @@ class AndGateLearningVisualization(Scene):
 
         predicted = target_value if comparator(output, threshold) else 1 - target_value
 
-        # AND 게이트 테이블 업데이트 (요청된 경우)
-        if update_table and hasattr(self, "and_gate_table"):
-            # 입력에 해당하는 행 인덱스 매핑 (2 ~ 5는 데이터 행에 해당)
-            row_index_map = {
-                (0, 0): 2,  # 첫 번째 데이터 행
-                (0, 1): 3,  # 두 번째 데이터 행
-                (1, 0): 4,  # 세 번째 데이터 행
-                (1, 1): 5,  # 네 번째 데이터 행
-            }
-            row_idx = row_index_map[inputs]
+        return predicted, org_approx_output, target_value
 
-            # 결과에 따라 녹색/빨간색 마크 선택
-            mark_type = "green_circle" if predicted == target_value else "red_circle"
+    def _update_truth_table_cell(
+        self,
+        inputs: tuple[float, float],
+        predicted: int,
+        target_value: int,
+        approx_output: float,
+    ) -> None:
+        """
+        AND 게이트 테이블의 출력 셀을 업데이트합니다.
 
-            # 예측 값을 테이블 셀에 업데이트
-            org_approx_output_tex = f"\\approx {org_approx_output:.6f}"
-            self.and_gate_table.update_result_cell(
-                row_idx,
-                org_approx_output_tex,
-                scene=self,
-                mark_type=mark_type,
-                mark_buff=0.2,
-                current_scale=self.TRUTH_TABLE_ZOOM_OUT_SCALE,
-            )
+        Parameters:
+        -----------
+        inputs : tuple[float, float]
+            입력 데이터 (x1, x2)
+        predicted : int
+            예측된 출력값 (0 또는 1)
+        target_value : int
+            실제 목표값 (0 또는 1)
+        approx_output : float
+            시그모이드 함수의 실제 출력값
+        """
+        if not hasattr(self, "and_gate_table"):
+            return
 
-        return predicted
+        # 입력에 해당하는 행 인덱스 매핑 (2 ~ 5는 데이터 행에 해당)
+        row_index_map = {
+            (0, 0): 2,  # 첫 번째 데이터 행
+            (0, 1): 3,  # 두 번째 데이터 행
+            (1, 0): 4,  # 세 번째 데이터 행
+            (1, 1): 5,  # 네 번째 데이터 행
+        }
+        row_idx = row_index_map[inputs]
+
+        # 결과에 따라 녹색/빨간색 마크 선택
+        mark_type = "green_circle" if predicted == target_value else "red_circle"
+
+        # 예측 값을 테이블 셀에 업데이트
+        approx_output_tex = f"\\approx {approx_output:.6f}"
+        self.and_gate_table.update_result_cell(
+            row_idx,
+            approx_output_tex,
+            scene=self,
+            mark_type=mark_type,
+            mark_buff=0.2,
+            current_scale=self.TRUTH_TABLE_ZOOM_OUT_SCALE,
+        )
 
     def _update_data_point_colors(self, weights, bias, loss) -> list[Animation]:
         """현재 가중치와 바이어스로 예측 결과에 따라 데이터 포인트 색상을 업데이트합니다."""
         animations = []
+        prediction_results = []
 
         for point in self.data_points:
             x, y = point["coords"]
             target = point["output"]
-            prediction = self._predict_AND_gate_output(
-                weights, bias, loss, (x, y), update_table=True
+            prediction, approx_output, target_value = self._predict_AND_gate_output(
+                weights, bias, loss, (x, y)
+            )
+
+            # 예측 결과를 저장 (나중에 호출측에서 테이블 업데이트를 위해)
+            prediction_results.append(
+                {
+                    "inputs": (x, y),
+                    "prediction": prediction,
+                    "target_value": target_value,
+                    "approx_output": approx_output,
+                }
             )
 
             # 예측 성공/실패에 따른 색상 결정
@@ -559,7 +610,7 @@ class AndGateLearningVisualization(Scene):
             dot = self.data_dots[(x, y)]
             animations.append(dot.animate.set_color(new_color))
 
-        return animations
+        return animations, prediction_results
 
     def _show_data_points(self):
         """데이터 포인트와 레이블을 불투명도 1.0으로 설정하여 보이게 합니다."""
@@ -580,8 +631,15 @@ class AndGateLearningVisualization(Scene):
         filtered_history = []
         prev_loss = None
         prev_index = -1
+        current_text = None
 
         for i, data in enumerate(self.epoch_progress_history):
+            if data["epoch"] == -1:
+                current_text = self._create_epoch_text(data)
+                self.play(FadeIn(current_text))
+                self.wait()
+                continue
+
             current_loss = data["loss"]
 
             # 첫 번째 항목은 무조건 포함
@@ -621,11 +679,12 @@ class AndGateLearningVisualization(Scene):
                 first_data["loss"],
             )
         )
-        current_text = self._create_epoch_text(first_data)
+        new_text = self._create_epoch_text(first_data)
 
-        # 에포크 0에서는 텍스트만 표시 (직선과 영역은 표시하지 않음)
-        self.play(FadeIn(current_text))
+        # 에포크 0에서는 초기 신경망 내부 파라미터 값만 표시 (직선과 영역은 표시하지 않음)
+        self.play(ReplacementTransform(current_text, new_text))
         self.wait()
+        current_text = new_text
 
         # 에포크 1부터는 시각적 요소 모두 표시
         if history_len > 1:
@@ -648,22 +707,42 @@ class AndGateLearningVisualization(Scene):
                 label.set_opacity(1)  # 직접 불투명도 설정
 
             # 데이터 포인트 색상 업데이트
+            prediction_results = []
             for point in self.data_points:
                 x, y = point["coords"]
                 target = point["output"]
-                # NeuralNet을 사용한 예측 및 테이블 업데이트
-                prediction = self._predict_AND_gate_output(
+                # NeuralNet을 사용한 예측 (테이블 업데이트 제외)
+                prediction, approx_output, target_value = self._predict_AND_gate_output(
                     epoch_data["weights"],
                     epoch_data["bias"],
                     epoch_data["loss"],
                     (x, y),
-                    update_table=True,  # 테이블 업데이트 활성화
                 )
+
+                # 예측 결과 저장
+                prediction_results.append(
+                    {
+                        "inputs": (x, y),
+                        "prediction": prediction,
+                        "target_value": target_value,
+                        "approx_output": approx_output,
+                    }
+                )
+
                 # 색상 설정
                 new_color = (
                     self.CORRECT_COLOR if prediction == target else self.WRONG_COLOR
                 )
                 self.data_dots[(x, y)].set_color(new_color)  # 직접 색상 설정
+
+            # 테이블 셀 업데이트 (예측 이후에 일괄 수행)
+            for result in prediction_results:
+                self._update_truth_table_cell(
+                    result["inputs"],
+                    result["prediction"],
+                    result["target_value"],
+                    result["approx_output"],
+                )
 
             # 에포크 1의 모든 요소 표시
             animations = [
@@ -705,8 +784,8 @@ class AndGateLearningVisualization(Scene):
             )
             new_text = self._create_epoch_text(epoch_data)
 
-            # 데이터 포인트 색상 업데이트 애니메이션
-            color_animations = self._update_data_point_colors(
+            # 데이터 포인트 색상 업데이트 애니메이션 (테이블 업데이트 분리)
+            color_animations, prediction_results = self._update_data_point_colors(
                 epoch_data["weights"], epoch_data["bias"], epoch_data["loss"]
             )
 
@@ -726,6 +805,16 @@ class AndGateLearningVisualization(Scene):
                     animations.append(FadeIn(new_equation))
 
                 self.play(*animations)
+
+                # 데이터 포인트 색상 업데이트 후 테이블 셀 업데이트 (분리된 시점에 실행)
+                for result in prediction_results:
+                    self._update_truth_table_cell(
+                        result["inputs"],
+                        result["prediction"],
+                        result["target_value"],
+                        result["approx_output"],
+                    )
+
                 self.wait()
 
                 # 현재 객체들 업데이트
@@ -739,7 +828,7 @@ class AndGateLearningVisualization(Scene):
                 for point in self.data_points:
                     x, y = point["coords"]
                     target = point["output"]
-                    prediction = self._predict_AND_gate_output(
+                    prediction, _, _ = self._predict_AND_gate_output(
                         epoch_data["weights"],
                         epoch_data["bias"],
                         epoch_data["loss"],
