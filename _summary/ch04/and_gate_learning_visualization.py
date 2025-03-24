@@ -624,20 +624,221 @@ class AndGateLearningVisualization(Scene):
 
         return animations
 
+    def _apply_epoch_visualization(
+        self,
+        current_line,
+        current_region,
+        current_equation,
+        current_text,
+        new_line,
+        new_region,
+        new_equation,
+        new_text,
+        color_animations,
+    ) -> tuple:
+        """
+        에포크 변경 시 시각화 요소를 업데이트합니다.
+
+        Returns:
+        --------
+        tuple: 업데이트된 (current_line, current_region, current_equation, current_text) 객체들
+        """
+        animations = [
+            ReplacementTransform(current_region, new_region),
+            ReplacementTransform(current_line, new_line),
+            ReplacementTransform(current_text, new_text),
+        ]
+
+        # 색상 업데이트 애니메이션 추가
+        animations.extend(color_animations)
+
+        # 방정식 업데이트 애니메이션 추가
+        if current_equation and new_equation:
+            animations.append(ReplacementTransform(current_equation, new_equation))
+        elif new_equation:
+            animations.append(FadeIn(new_equation))
+
+        # 애니메이션 실행
+        self.play(*animations)
+
+        # 현재 객체 업데이트 후 반환
+        return new_line, new_region, new_equation, new_text
+
+    def _check_all_predictions_correct(self, weights, bias, loss) -> bool:
+        """
+        모든 데이터 포인트에 대한 예측이 정확한지 확인합니다.
+
+        Returns:
+        --------
+        bool: 모든 예측이 정확하면 True, 하나라도 틀리면 False
+        """
+        for point in self.data_points:
+            x, y = point["coords"]
+            target = point["output"]
+            prediction, _, _ = self._predict_AND_gate_output(
+                weights, bias, loss, (x, y)
+            )
+            if prediction != target:  # 하나라도 불일치하면 False
+                return False
+        return True
+
     def _display_training_history(self, number_plane: NumberPlane) -> None:
         """트레이닝 히스토리 데이터를 사용하여 결정 경계선 변화를 애니메이션으로 표시합니다."""
 
         # loss 값 차이가 LOSS_THRESHOLD 미만인 구간에서는 첫 번째 값만 남기고 필터링
-        filtered_history = []
-        prev_loss = None
-        prev_index = -1
+        filtered_history = self._filter_training_history()
         current_text = None
 
-        for i, data in enumerate(self.epoch_progress_history):
+        # 제목 텍스트 표시 (에포크 -1, 초기 파라미터 설명)
+        for data in self.epoch_progress_history:
             if data["epoch"] == -1:
                 current_text = self._create_epoch_text(data)
                 self.play(FadeIn(current_text))
                 self.wait()
+                break  # 초기 파라미터 한 번만 처리
+
+        # 필터링된 히스토리 사용
+        history_len = len(filtered_history)
+        if history_len <= 0:
+            return
+
+        # 초기 요소들 생성 (에포크 0)
+        first_data = filtered_history[0]
+        current_line, current_region, current_equation = (
+            self._draw_decision_boundary_and_region(
+                number_plane,
+                first_data["weights"],
+                first_data["bias"],
+                first_data["loss"],
+            )
+        )
+        new_text = self._create_epoch_text(first_data)
+
+        # 에포크 0에서는 초기 신경망 내부 파라미터 값만 표시
+        self.play(ReplacementTransform(current_text, new_text))
+        self.wait()
+        current_text = new_text
+
+        # 에포크 1부터는 시각적 요소 모두 표시
+        if history_len > 1:
+            epoch_data = filtered_history[1]
+            new_line, new_region, new_equation = (
+                self._draw_decision_boundary_and_region(
+                    number_plane,
+                    epoch_data["weights"],
+                    epoch_data["bias"],
+                    epoch_data["loss"],
+                )
+            )
+            new_text = self._create_epoch_text(epoch_data)
+
+            # 데이터 포인트와 레이블 표시
+            self._show_initial_data_points()
+
+            # 데이터 포인트 색상 및 테이블 업데이트
+            prediction_results = self._update_initial_data_point_colors(epoch_data)
+
+            # 에포크 1의 모든 요소 표시
+            animations = [
+                FadeIn(new_region),
+                FadeIn(new_line),
+                ReplacementTransform(current_text, new_text),
+            ]
+
+            if new_equation:
+                animations.append(FadeIn(new_equation))
+
+            # 모든 데이터 포인트와 레이블을 애니메이션으로 표시
+            animations.append(
+                AnimationGroup(
+                    *[FadeIn(dot) for dot in self.data_dots.values()]
+                    + [FadeIn(label) for label in self.data_labels.values()]
+                )
+            )
+
+            self.play(*animations)
+
+            # 테이블 셀 업데이트 (애니메이션 후 수행)
+            for result in prediction_results:
+                self._update_truth_table_cell(
+                    result["inputs"],
+                    result["prediction"],
+                    result["target_value"],
+                    result["approx_output"],
+                )
+
+            self.wait()
+
+            # 현재 객체들 업데이트
+            current_line = new_line
+            current_region = new_region
+            current_equation = new_equation
+            current_text = new_text
+
+        # 두 번째 에포크부터는 ReplacementTransform 사용
+        for i in range(2, history_len):
+            epoch_data = filtered_history[i]
+            new_line, new_region, new_equation = (
+                self._draw_decision_boundary_and_region(
+                    number_plane,
+                    epoch_data["weights"],
+                    epoch_data["bias"],
+                    epoch_data["loss"],
+                )
+            )
+            new_text = self._create_epoch_text(epoch_data)
+
+            # 데이터 포인트 색상 업데이트 (테이블 업데이트 분리)
+            color_animations, prediction_results = self._update_data_point_colors(
+                epoch_data["weights"], epoch_data["bias"], epoch_data["loss"]
+            )
+
+            # 시각화 요소 업데이트
+            if new_line and current_line:
+                current_line, current_region, current_equation, current_text = (
+                    self._apply_epoch_visualization(
+                        current_line,
+                        current_region,
+                        current_equation,
+                        current_text,
+                        new_line,
+                        new_region,
+                        new_equation,
+                        new_text,
+                        color_animations,
+                    )
+                )
+
+                # 데이터 포인트 색상 업데이트 후 테이블 셀 업데이트
+                for result in prediction_results:
+                    self._update_truth_table_cell(
+                        result["inputs"],
+                        result["prediction"],
+                        result["target_value"],
+                        result["approx_output"],
+                    )
+
+                self.wait()
+
+                # 모든 예측이 정확하면 나머지 에포크 표시 건너뛰기
+                if self._check_all_predictions_correct(
+                    epoch_data["weights"], epoch_data["bias"], epoch_data["loss"]
+                ):
+                    print(
+                        f"에포크 {epoch_data['epoch']}에서 모든 예측이 정확합니다. 학습 완료!"
+                    )
+                    break
+
+    def _filter_training_history(self) -> list:
+        """
+        에포크 히스토리를 필터링하여 중요한 변화만 보여줍니다.
+        """
+        filtered_history = []
+        prev_loss = None
+        prev_index = -1
+
+        for i, data in enumerate(self.epoch_progress_history):
+            if data["epoch"] == -1:  # 초기 파라미터 설명 에포크는 건너뜀
                 continue
 
             current_loss = data["loss"]
@@ -661,189 +862,51 @@ class AndGateLearningVisualization(Scene):
         print(
             f"원본 히스토리 길이: {len(self.epoch_progress_history)}, 필터링 후 길이: {len(filtered_history)}"
         )
+        return filtered_history
 
-        # 필터링된 히스토리 사용
-        history_len = len(filtered_history)
-        if history_len <= 0:
-            return
+    def _show_initial_data_points(self) -> None:
+        """
+        에포크 1에서 데이터 포인트와 레이블을 보이게 설정합니다.
+        """
+        # 데이터 포인트와 레이블을 보이게 설정
+        for coords, dot in self.data_dots.items():
+            dot.set_fill(opacity=1)  # 직접 불투명도 설정
 
-        # 초기 요소들 생성 (에포크 0)
-        first_data = filtered_history[0]
+        for coords, label in self.data_labels.items():
+            label.set_opacity(1)  # 직접 불투명도 설정
 
-        # 직선과 영역은 생성하되 화면에 표시하지 않음
-        current_line, current_region, current_equation = (
-            self._draw_decision_boundary_and_region(
-                number_plane,
-                first_data["weights"],
-                first_data["bias"],
-                first_data["loss"],
-            )
-        )
-        new_text = self._create_epoch_text(first_data)
+    def _update_initial_data_point_colors(self, epoch_data) -> list:
+        """
+        에포크 1에서 데이터 포인트 색상을 업데이트하고 예측 결과를 반환합니다.
+        """
+        prediction_results = []
+        for point in self.data_points:
+            x, y = point["coords"]
+            target = point["output"]
 
-        # 에포크 0에서는 초기 신경망 내부 파라미터 값만 표시 (직선과 영역은 표시하지 않음)
-        self.play(ReplacementTransform(current_text, new_text))
-        self.wait()
-        current_text = new_text
-
-        # 에포크 1부터는 시각적 요소 모두 표시
-        if history_len > 1:
-            epoch_data = filtered_history[1]
-            new_line, new_region, new_equation = (
-                self._draw_decision_boundary_and_region(
-                    number_plane,
-                    epoch_data["weights"],
-                    epoch_data["bias"],
-                    epoch_data["loss"],
-                )
-            )
-            new_text = self._create_epoch_text(epoch_data)
-
-            # 데이터 포인트와 레이블을 보이게 만듦 (직접 설정)
-            for coords, dot in self.data_dots.items():
-                dot.set_fill(opacity=1)  # 직접 불투명도 설정
-
-            for coords, label in self.data_labels.items():
-                label.set_opacity(1)  # 직접 불투명도 설정
-
-            # 데이터 포인트 색상 업데이트
-            prediction_results = []
-            for point in self.data_points:
-                x, y = point["coords"]
-                target = point["output"]
-                # NeuralNet을 사용한 예측 (테이블 업데이트 제외)
-                prediction, approx_output, target_value = self._predict_AND_gate_output(
-                    epoch_data["weights"],
-                    epoch_data["bias"],
-                    epoch_data["loss"],
-                    (x, y),
-                )
-
-                # 예측 결과 저장
-                prediction_results.append(
-                    {
-                        "inputs": (x, y),
-                        "prediction": prediction,
-                        "target_value": target_value,
-                        "approx_output": approx_output,
-                    }
-                )
-
-                # 색상 설정
-                new_color = (
-                    self.CORRECT_COLOR if prediction == target else self.WRONG_COLOR
-                )
-                self.data_dots[(x, y)].set_color(new_color)  # 직접 색상 설정
-
-            # 테이블 셀 업데이트 (예측 이후에 일괄 수행)
-            for result in prediction_results:
-                self._update_truth_table_cell(
-                    result["inputs"],
-                    result["prediction"],
-                    result["target_value"],
-                    result["approx_output"],
-                )
-
-            # 에포크 1의 모든 요소 표시
-            animations = [
-                FadeIn(new_region),
-                FadeIn(new_line),
-                ReplacementTransform(current_text, new_text),
-            ]
-
-            if new_equation:
-                animations.append(FadeIn(new_equation))
-
-            # 모든 데이터 포인트와 레이블을 애니메이션으로 표시
-            animations.append(
-                AnimationGroup(
-                    *[FadeIn(dot) for dot in self.data_dots.values()]
-                    + [FadeIn(label) for label in self.data_labels.values()]
-                )
+            # 예측 수행
+            prediction, approx_output, target_value = self._predict_AND_gate_output(
+                epoch_data["weights"],
+                epoch_data["bias"],
+                epoch_data["loss"],
+                (x, y),
             )
 
-            self.play(*animations)
-            self.wait()
-
-            # 현재 객체들 업데이트
-            current_line = new_line
-            current_region = new_region
-            current_equation = new_equation
-            current_text = new_text
-
-        # 두 번째 에포크부터는 ReplacementTransform 사용
-        for i in range(2, history_len):
-            epoch_data = filtered_history[i]
-            new_line, new_region, new_equation = (
-                self._draw_decision_boundary_and_region(
-                    number_plane,
-                    epoch_data["weights"],
-                    epoch_data["bias"],
-                    epoch_data["loss"],
-                )
-            )
-            new_text = self._create_epoch_text(epoch_data)
-
-            # 데이터 포인트 색상 업데이트 애니메이션 (테이블 업데이트 분리)
-            color_animations, prediction_results = self._update_data_point_colors(
-                epoch_data["weights"], epoch_data["bias"], epoch_data["loss"]
+            # 예측 결과 저장
+            prediction_results.append(
+                {
+                    "inputs": (x, y),
+                    "prediction": prediction,
+                    "target_value": target_value,
+                    "approx_output": approx_output,
+                }
             )
 
-            if new_line and current_line:
-                animations = [
-                    ReplacementTransform(current_region, new_region),
-                    ReplacementTransform(current_line, new_line),
-                    ReplacementTransform(current_text, new_text),
-                ]
-                animations.extend(color_animations)  # 색상 업데이트
+            # 색상 설정
+            new_color = self.CORRECT_COLOR if prediction == target else self.WRONG_COLOR
+            self.data_dots[(x, y)].set_color(new_color)
 
-                if current_equation and new_equation:
-                    animations.append(
-                        ReplacementTransform(current_equation, new_equation)
-                    )
-                elif new_equation:
-                    animations.append(FadeIn(new_equation))
-
-                self.play(*animations)
-
-                # 데이터 포인트 색상 업데이트 후 테이블 셀 업데이트 (분리된 시점에 실행)
-                for result in prediction_results:
-                    self._update_truth_table_cell(
-                        result["inputs"],
-                        result["prediction"],
-                        result["target_value"],
-                        result["approx_output"],
-                    )
-
-                self.wait()
-
-                # 현재 객체들 업데이트
-                current_line = new_line
-                current_region = new_region
-                current_equation = new_equation
-                current_text = new_text
-
-                # 모든 점이 녹색인지 검사 (모든 예측이 정확한지 확인)
-                all_correct = True
-                for point in self.data_points:
-                    x, y = point["coords"]
-                    target = point["output"]
-                    prediction, _, _ = self._predict_AND_gate_output(
-                        epoch_data["weights"],
-                        epoch_data["bias"],
-                        epoch_data["loss"],
-                        (x, y),
-                    )
-                    if prediction != target:  # 하나라도 불일치하면 False
-                        all_correct = False
-                        break
-
-                # 모든 예측이 정확하면 나머지 에포크 표시 건너뛰기
-                if all_correct:
-                    print(
-                        f"에포크 {epoch_data['epoch']}에서 모든 예측이 정확합니다. 학습 완료!"
-                    )
-                    break  # 학습이 완료되어 나머지 에포크는 표시하지 않음
+        return prediction_results
 
     def _setup_AND_gate_model(self):
         """초기 설정 및 데이터 학습 수행"""
