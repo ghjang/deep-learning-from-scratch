@@ -196,8 +196,7 @@ class NeuralNet(
         for layer in self.layers:
             # 가중치와 편향이 없으면 초기화
             if layer.weights is None:
-                prev_size = layer_output.shape[1]
-                # 가중치 초기화 헬퍼 메서드 활용
+                prev_size = layer_output.shape[1] # NOTE: '1차원 배열' 입력만으로 가정함.
                 layer.weights = self._initialize_weights(prev_size, layer.output_size)
 
             if layer.biases is None and auto_init_bias:

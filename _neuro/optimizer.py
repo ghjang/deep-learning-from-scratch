@@ -301,8 +301,8 @@ class OptimizerMixin(Generic[T]):
         """
 
         # 손실 함수를 목적 함수로 정의
-        def loss_objective(output: NDArray) -> float:
-            return self.compute_loss(output, y)
+        def loss_objective(model_output: NDArray) -> float:
+            return self.compute_loss(model_output, y)
 
         return self.compute_model_gradients(x, loss_objective)
 
@@ -319,7 +319,7 @@ class OptimizerMixin(Generic[T]):
     def _update_gradient_descent(
         self, gradients: dict[int, dict[str, NDArray]], learning_rate: float
     ) -> None:
-        """SGD 알고리즘으로 파라미터 업데이트"""
+        """경사하강법 알고리즘으로 파라미터 업데이트"""
         for layer_idx, layer_grads in gradients.items():
             layer = self.layers[layer_idx]
 
