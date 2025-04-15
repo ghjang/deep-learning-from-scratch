@@ -505,7 +505,7 @@ class AndGateLearningVisualization(Scene):
         # '1개 레이어'로만 구성된 모델을 'NN.load' 메쏘드를 이용하여 간단하게 생성
         model = (
             NN.create()
-            .layer(weights=np.array(weights).reshape(-1, 1), biases=np.array([bias]))
+            .layer(init_weights=np.array(weights).reshape(-1, 1), init_biases=np.array([bias]))
             .activation(sigmoid)
         )
 

@@ -17,15 +17,20 @@ class Layer:
 
     def __init__(
         self,
+        layer_index: int,
         output_size: int,
         weights: NDArray | None = None,
         biases: NDArray | None = None,
         activation: ActivationFunction | None = None,
     ):
+        self.layer_index: int = layer_index
         self.output_size: int = output_size
         self.weights: NDArray | None = weights
         self.biases: NDArray | None = biases
         self.activation: ActivationFunction | None = activation
+
+        self.auto_init_weights: bool = True
+        self.auto_init_biases: bool = True
 
     def get_type(self) -> str:
         """
@@ -123,63 +128,84 @@ class NeuralNet(
         return np.random.randn(input_size, output_size) * weight_scale
 
     def layer(
-        self, output_size: int = None, weights: NDArray = None, biases: NDArray = None
+        self,
+        output_size: int = None,
+        init_weights: NDArray = None,
+        init_biases: NDArray = None,
+        auto_init_weights: bool = True,
+        auto_init_biases: bool = True,
     ) -> Self:
         """
         신경망에 새 레이어를 추가합니다.
 
         Args:
             output_size: 레이어의 출력 크기(뉴런 수). weights가 제공된 경우 자동 계산됨
-            weights: 직접 제공할 가중치 행렬. None이면 자동 초기화됨
-            biases: 직접 제공할 바이어스 벡터. None이면 0으로 초기화됨
+            init_weights: 직접 제공할 가중치 행렬. None이면 자동 초기화됨
+            init_biases: 직접 제공할 바이어스 벡터. None이면 0으로 초기화됨
 
         Returns:
             자기 자신 (메서드 체이닝 지원)
         """
         # 가중치가 제공된 경우 출력 크기 계산
-        if weights is not None:
-            calculated_output_size = weights.shape[1]
+        if init_weights is not None:
+            calculated_output_size = init_weights.shape[1]
             if output_size is not None and output_size != calculated_output_size:
                 raise ValueError(
                     f"제공된 가중치 행렬의 열 수({calculated_output_size})와 출력 크기({output_size})가 일치하지 않습니다."
                 )
             output_size = calculated_output_size
 
+        if output_size is None and init_biases is not None:
+            output_size = init_biases.shape[0]
+
         if output_size is None:
             raise ValueError(
-                "출력 크기(output_size)나 가중치(weights)를 제공해야 합니다."
+                "'출력 크기(output_size), 가중치(weights), 바이어스(biases)' 중 하나는 반드시 제공되어야 합니다."
             )
 
         # 바이어스가 제공된 경우 크기 검증
-        if biases is not None and biases.shape[0] != output_size:
+        if init_biases is not None and init_biases.shape[0] != output_size:
             raise ValueError(
-                f"제공된 바이어스 벡터의 크기({biases.shape[0]})가 출력 크기({output_size})와 일치하지 않습니다."
+                f"제공된 바이어스 벡터의 크기({init_biases.shape[0]})가 출력 크기({output_size})와 일치하지 않습니다."
             )
+
+        new_layer_index = len(self.layers) + 1
 
         if len(self.layers) == 0:
             # 첫 번째 레이어 추가
-            if weights is not None:
+            if init_weights is not None:
                 # 직접 가중치가 제공된 경우
-                if biases is None:
-                    biases = np.zeros(output_size)
-                self.layers.append(Layer(output_size, weights, biases))
+                if init_biases is None and auto_init_biases:
+                    init_biases = np.zeros(output_size)
+                self.layers.append(
+                    Layer(new_layer_index, output_size, init_weights, init_biases)
+                )
             else:
                 # weights와 biases는 forward 메서드에서 '입력 데이터 크기'에 기반해 초기화됨
-                self.layers.append(Layer(output_size))
+                self.layers.append(Layer(new_layer_index, output_size))
         else:
             prev_size = self.layers[-1].output_size
-            if weights is None:
-                # 가중치 초기화 헬퍼 메서드 활용
-                weights = self._initialize_weights(prev_size, output_size)
-            elif weights.shape[0] != prev_size:
+            if init_weights is None:
+                if auto_init_weights:
+                    # 가중치 초기화 헬퍼 메서드 활용
+                    init_weights = self._initialize_weights(prev_size, output_size)
+            elif init_weights.shape[0] != prev_size:
                 raise ValueError(
-                    f"제공된 가중치 행렬의 행 수({weights.shape[0]})가 이전 레이어의 출력 크기({prev_size})와 일치하지 않습니다."
+                    f"제공된 가중치 행렬의 행 수({init_weights.shape[0]})가 이전 레이어의 출력 크기({prev_size})와 일치하지 않습니다."
                 )
 
-            if biases is None:
-                biases = np.zeros(output_size)
+            if init_biases is None and auto_init_biases:
+                init_biases = np.zeros(output_size)
 
-            self.layers.append(Layer(output_size, weights, biases))
+            new_layer = Layer(new_layer_index, output_size, init_weights, init_biases)
+
+            # NOTE:
+            # 'forward'시에 자동으로 가중치와 편향을 초기화하지 못하게 해서
+            # 단순히 '활성 함수'만 적용하는 레이어를 만들기 위한 플래그 설정임.
+            new_layer.auto_init_weights = auto_init_weights
+            new_layer.auto_init_biases = auto_init_biases
+
+            self.layers.append(new_layer)
 
         return self
 
@@ -200,11 +226,14 @@ class NeuralNet(
             raise ValueError(
                 "활성화 함수를 설정하기 전에 레이어를 먼저 추가해야 합니다."
             )
-        self.layers[-1].activation = f
+
+        last_layer = self.layers[-1]
+        last_layer.activation = f
+
         return self
 
     def forward(
-        self, x: NDArray, auto_init_weights: bool = True, auto_init_bias: bool = True
+        self, x: NDArray, auto_init_weights: bool = True, auto_init_biases: bool = True
     ) -> NDArray:
         """순방향 전파를 수행합니다.
 
@@ -212,7 +241,8 @@ class NeuralNet(
             x: 입력 데이터.
                - 1차원 배열 (features,): 단일 샘플로 처리됨
                - 2차원 배열 (batch_size, features): 배치 데이터
-            auto_init_bias: True인 경우 레이어의 편향이 None인 경우 0으로 초기화합니다.
+            auto_init_weights: True인 경우 레이어의 가중치가 None인 경우 자동 초기화합니다.
+            auto_init_biases: True인 경우 레이어의 편향이 None인 경우 0으로 초기화합니다.
 
         Returns:
             출력 데이터. shape=(batch_size, output_features)
@@ -230,12 +260,12 @@ class NeuralNet(
         # 첫 번째 레이어(첫 번째 은닉층)부터 순방향 계산 수행
         for idx, layer in enumerate(self.layers):
             # 가중치와 편향이 없으면 초기화
-            if layer.weights is None and auto_init_weights:
+            if layer.weights is None and layer.auto_init_weights and auto_init_weights:
                 # NOTE: '1차원 배열' 입력만으로 가정함.
                 prev_size = layer_output.shape[1]
                 layer.weights = self._initialize_weights(prev_size, layer.output_size)
 
-            if layer.biases is None and auto_init_bias:
+            if layer.biases is None and layer.auto_init_biases and auto_init_biases:
                 layer.biases = np.zeros(layer.output_size)
 
             if layer.weights is not None:
@@ -333,7 +363,7 @@ class NeuralNet(
             input_size = self.layers[0].weights.shape[0]
             print(f"{'입력층':^10}{input_size:^15}{0:^15}{'없음':^27}")
         else:
-            print(f"{'입력층':^10}{'알 수 없음':^15}{0:^15}{'없음':^27}")
+            print(f"{'입력층':^10}{'알 수 없음':^13}{0:^12}{'없음':^30}")
 
         # 각 레이어 표시 (모두 계산에 참여하는 레이어로 취급)
         for i, layer in enumerate(self.layers):
