@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 from numpy.typing import NDArray
 from typing import Self
 from activation import *
@@ -25,6 +26,38 @@ class Layer:
         self.weights: NDArray | None = weights
         self.biases: NDArray | None = biases
         self.activation: ActivationFunction | None = activation
+
+    def get_type(self) -> str:
+        """
+        현재 레이어의 타입을 설정된 속성에 따라 반환합니다.
+
+        Returns:
+            str: 레이어 타입 문자열
+        """
+        has_weights = self.weights is not None
+        has_biases = self.biases is not None
+        has_activation = self.activation is not None
+
+        if has_weights and has_biases:
+            layer_type = "affine"  # 가중치와 바이어스를 모두 가진 레이어
+        elif has_weights:
+            layer_type = "linear"  # 가중치만 있는 레이어 (행렬 곱셈)
+        elif has_biases:
+            layer_type = "bias_add"  # 바이어스만 더하는 레이어
+        else:
+            layer_type = "passthrough"  # 아무 변환도 하지 않는 레이어
+
+        # 활성화 함수가 있으면 추가 정보 포함
+        if has_activation:
+            activation_name = self.activation.__name__
+            if layer_type == "passthrough":
+                layer_type = f"activation_{activation_name}"  # 활성화만 있는 경우
+            else:
+                layer_type = (
+                    f"{layer_type}_with_{activation_name}"  # 다른 연산 + 활성화
+                )
+
+        return layer_type
 
 
 class NeuralNet(
@@ -170,7 +203,9 @@ class NeuralNet(
         self.layers[-1].activation = f
         return self
 
-    def forward(self, x: NDArray, auto_init_bias: bool = True) -> NDArray:
+    def forward(
+        self, x: NDArray, auto_init_weights: bool = True, auto_init_bias: bool = True
+    ) -> NDArray:
         """순방향 전파를 수행합니다.
 
         Args:
@@ -193,23 +228,36 @@ class NeuralNet(
         layer_output = x  # NOTE: x 자체가 입력층
 
         # 첫 번째 레이어(첫 번째 은닉층)부터 순방향 계산 수행
-        for layer in self.layers:
+        for idx, layer in enumerate(self.layers):
             # 가중치와 편향이 없으면 초기화
-            if layer.weights is None:
-                prev_size = layer_output.shape[1] # NOTE: '1차원 배열' 입력만으로 가정함.
+            if layer.weights is None and auto_init_weights:
+                # NOTE: '1차원 배열' 입력만으로 가정함.
+                prev_size = layer_output.shape[1]
                 layer.weights = self._initialize_weights(prev_size, layer.output_size)
 
             if layer.biases is None and auto_init_bias:
                 layer.biases = np.zeros(layer.output_size)
 
-            # 선형 계산: z = x @ W + b
-            if layer.biases is None:
-                z = layer_output @ layer.weights
+            if layer.weights is not None:
+                if layer.biases is not None:
+                    # 선형 계산: z = x @ W + b
+                    z = layer_output @ layer.weights + layer.biases
+                else:
+                    z = layer_output @ layer.weights
             else:
-                z = layer_output @ layer.weights + layer.biases
+                if layer.biases is not None:
+                    z = layer_output + layer.biases
+                else:
+                    z = layer_output
 
             # 활성화 함수 적용 (다음 레이어의 입력이 됨)
             layer_output = z if layer.activation is None else layer.activation(z)
+
+            layer_type = layer.get_type()
+            if layer_type == "passthrough":
+                warnings.warn(
+                    f"경고: 레이어 {idx + 1}는 '{layer_type}' 타입으로, 입력을 그대로 출력합니다."
+                )
 
         # 최종 출력(다음 레이어의 입력) 반환
         return layer_output
@@ -270,10 +318,12 @@ class NeuralNet(
 
     def summary(self) -> None:
         """신경망 구조에 대한 요약 정보를 출력합니다."""
+        dashes = "-" * 72
+
         print("신경망 모델 요약:")
-        print("-" * 60)
-        print(f"{'레이어':^10}{'출력 크기':^15}{'파라미터 수':^15}{'활성화 함수':^20}")
-        print("-" * 60)
+        print(dashes)
+        print(f"{'레이어':^10}{'출력 크기':^12}{'파라미터 수':^10}{'레이어 타입':^20}")
+        print(dashes)
 
         total_params = 0
         total_bytes = 0  # 메모리 사용량 계산을 위한 변수 추가
@@ -281,9 +331,9 @@ class NeuralNet(
         # 입력층 표시 (첫 번째 레이어의 입력 크기 기준)
         if self.layers and self.layers[0].weights is not None:
             input_size = self.layers[0].weights.shape[0]
-            print(f"{'입력층':^10}{input_size:^15}{0:^15}{'없음':^20}")
+            print(f"{'입력층':^10}{input_size:^15}{0:^15}{'없음':^27}")
         else:
-            print(f"{'입력층':^10}{'알 수 없음':^15}{0:^15}{'없음':^20}")
+            print(f"{'입력층':^10}{'알 수 없음':^15}{0:^15}{'없음':^27}")
 
         # 각 레이어 표시 (모두 계산에 참여하는 레이어로 취급)
         for i, layer in enumerate(self.layers):
@@ -297,25 +347,23 @@ class NeuralNet(
             if layer.biases is not None:
                 total_bytes += layer.biases.nbytes
 
-            # 활성화 함수 이름 확인
-            if layer.activation is None:
-                act_name = "없음"
-            else:
-                act_name = layer.activation.__name__
-
             # 레이어 유형 결정 (마지막 레이어는 출력층, 나머지는 은닉층)
             layer_type = "출력층" if i == len(self.layers) - 1 else f"은닉층 {i+1}"
 
             total_params += params
-            print(f"{layer_type:^10}{layer.output_size:^15}{params:^15}{act_name:^20}")
+
+            layer_type_str = layer.get_type()
+            print(
+                f"{layer_type:^10}{layer.output_size:^15}{params:^15}{layer_type_str:^30}"
+            )
 
         # 메모리 사용량 형식화에 공통 메서드 사용
         memory_size = self._format_memory_size(total_bytes)
 
-        print("-" * 60)
+        print(dashes)
         print(f"총 파라미터 수: {total_params:,}")
         print(f"총 메모리 사용량: {memory_size}")
-        print("-" * 60)
+        print(dashes)
 
     def get_model_info(self) -> dict[str, tuple[int, str]]:
         """모델의 파라미터 개수와 메모리 사용량 정보를 반환합니다.
