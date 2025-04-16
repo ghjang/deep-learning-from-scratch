@@ -1,7 +1,10 @@
 import unittest
 import numpy as np
-from neural_net import NeuralNet as NN
+
+# Neuro 구현 모듈들
 from activation import sigmoid
+from neural_net import NeuralNet as NN
+from neuro import Neuro
 
 
 class TestNeuralNet(unittest.TestCase):
@@ -122,6 +125,36 @@ class TestNeuralNet(unittest.TestCase):
         print("\n")
         model.summary()
         print("\n")
+
+
+class NeuroTest(unittest.TestCase):
+    def test_neuro_simple_forward(self):
+        # 1. 기본 모델 생성 및 구조 확인
+        model = (
+            Neuro.create()
+            .affine(4)
+            .sigmoid()
+            .affine(2, name="affine_2")
+            .sigmoid()
+            .linear(np.array([[0.1, 0.2], [0.3, 0.4]]))
+            .bias_add(np.array([5, 10]))
+        )
+
+        # 2. 순방향 전파 테스트
+        X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+
+        print("\n[순방향 전파 테스트]")
+        output = model.forward(X)
+        print("입력 데이터 형태:", X.shape)
+        print("출력 데이터 형태:", output.shape)
+        print("출력 데이터:")
+        print(output)
+
+        # NOTE:
+        # 'summary' 메서드 호출을 최초의 forward 전에 호출할 경우에
+        # 첫번째 레이어에 아직 가중치가 초기화되지 않은 경우에 '알 수 없음'으로 표시될 수 있음.
+        print("\n[모델 구조]")
+        model.summary()
 
 
 if __name__ == "__main__":
