@@ -144,14 +144,17 @@ class Layer:
         # 레이어 연산 적용
         if self.weights is not None:
             if self.biases is not None:
-                # 선형 계산: z = x @ W + b
+                # affine
                 z = input_data @ self.weights + self.biases
             else:
+                # linear
                 z = input_data @ self.weights
         else:
             if self.biases is not None:
+                # bias_add
                 z = input_data + self.biases
             else:
+                # passthrough
                 z = input_data
 
         # 활성화 함수 적용
