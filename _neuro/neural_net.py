@@ -1,163 +1,15 @@
 import numpy as np
 import warnings
 from numpy.typing import NDArray
-from typing import Self, Literal, TypeAlias
-from activation import *
+from typing import Self
+
+# NeuralNet 클래스에서 사용하는 믹스인들
 from model_io import SaveLoadMixin
+from layer import Layer, WeightInitMethod
+from activation import ActivationFunction
 from gradient import GradientMixin
 from loss import LossMixin
 from optimizer import OptimizerMixin
-
-# 초기화 방법을 위한 타입 별칭 정의
-WeightInitMethod: TypeAlias = Literal[
-    "xavier", "glorot", "he", "kaiming", "normal", "uniform", "zeros"
-]
-
-
-class Layer:
-    """신경망의 레이어를 표현하는 클래스
-
-    딕셔너리 대신 실제 클래스를 사용하여 속성 접근이 더 안전하고 명확해집니다.
-    """
-
-    def __init__(
-        self,
-        layer_index: int,
-        output_size: int,
-        weights: NDArray | None = None,
-        biases: NDArray | None = None,
-        activation: ActivationFunction | None = None,
-    ):
-        self.layer_index: int = layer_index
-        self.output_size: int = output_size
-        self.weights: NDArray | None = weights
-        self.biases: NDArray | None = biases
-        self.activation: ActivationFunction | None = activation
-
-        self.auto_init_weights: bool = True
-        self.auto_init_biases: bool = True
-
-    def get_type(self) -> str:
-        """
-        현재 레이어의 타입을 설정된 속성에 따라 반환합니다.
-
-        Returns:
-            str: 레이어 타입 문자열
-        """
-        has_weights = self.weights is not None
-        has_biases = self.biases is not None
-        has_activation = self.activation is not None
-
-        if has_weights and has_biases:
-            layer_type = "affine"  # 가중치와 바이어스를 모두 가진 레이어
-        elif has_weights:
-            layer_type = "linear"  # 가중치만 있는 레이어 (행렬 곱셈)
-        elif has_biases:
-            layer_type = "bias_add"  # 바이어스만 더하는 레이어
-        else:
-            layer_type = "passthrough"  # 아무 변환도 하지 않는 레이어
-
-        # 활성화 함수가 있으면 추가 정보 포함
-        if has_activation:
-            activation_name = self.activation.__name__
-            if layer_type == "passthrough":
-                layer_type = f"activation_{activation_name}"  # 활성화만 있는 경우
-            else:
-                layer_type = (
-                    f"{layer_type}_with_{activation_name}"  # 다른 연산 + 활성화
-                )
-
-        return layer_type
-
-    @staticmethod
-    def initialize_weights(
-        input_size: int, output_size: int, method: WeightInitMethod = "xavier"
-    ) -> NDArray:
-        """가중치 초기화를 수행하는 정적 메서드
-
-        Args:
-            input_size: 입력 크기
-            output_size: 출력 크기
-            method: 초기화 방법 ('xavier'/'glorot', 'he'/'kaiming', 'normal', 'uniform', 'zeros')
-
-        Returns:
-            초기화된 가중치 행렬
-
-        Raises:
-            ValueError: 지원되지 않는 초기화 방법이 지정된 경우
-        """
-        if method == "xavier" or method == "glorot":
-            # Xavier/Glorot 초기화: 활성화 함수가 선형이거나 tanh일 때 효과적
-            weight_scale = np.sqrt(2.0 / (input_size + output_size))
-            return np.random.randn(input_size, output_size) * weight_scale
-
-        elif method == "he" or method == "kaiming":
-            # He/Kaiming 초기화: ReLU 계열 활성화 함수에 적합
-            weight_scale = np.sqrt(2.0 / input_size)
-            return np.random.randn(input_size, output_size) * weight_scale
-
-        elif method == "normal":
-            # 표준 정규 분포 초기화 (평균 0, 표준편차 0.01)
-            return np.random.randn(input_size, output_size) * 0.01
-
-        elif method == "uniform":
-            # 균등 분포 초기화 (-0.05 ~ 0.05)
-            return np.random.uniform(-0.05, 0.05, (input_size, output_size))
-
-        elif method == "zeros":
-            # 0으로 초기화
-            return np.zeros((input_size, output_size))
-
-        else:
-            raise ValueError(
-                f"지원되지 않는 초기화 방법: {method}. 'xavier', 'he', 'normal', 'uniform', 'zeros' 중 하나를 사용하세요."
-            )
-
-    def forward(
-        self,
-        input_data: NDArray,
-        auto_init_weights: bool = True,
-        auto_init_biases: bool = True,
-        weight_init_method: WeightInitMethod = "xavier",
-    ) -> NDArray:
-        """레이어의 순방향 계산을 수행합니다.
-
-        Args:
-            input_data: 입력 데이터. shape=(batch_size, input_features)
-            auto_init_weights: 가중치 자동 초기화 여부
-            auto_init_biases: 바이어스 자동 초기화 여부
-            weight_init_method: 가중치 초기화 방법
-
-        Returns:
-            레이어의 출력 데이터. shape=(batch_size, output_size)
-        """
-        # 가중치와 편향이 없으면 초기화
-        if self.weights is None and self.auto_init_weights and auto_init_weights:
-            prev_size = input_data.shape[1]
-            self.weights = Layer.initialize_weights(
-                prev_size, self.output_size, weight_init_method
-            )
-
-        if self.biases is None and self.auto_init_biases and auto_init_biases:
-            self.biases = np.zeros(self.output_size)
-
-        # 레이어 연산 적용
-        if self.weights is not None:
-            if self.biases is not None:
-                # 선형 계산: z = x @ W + b
-                z = input_data @ self.weights + self.biases
-            else:
-                z = input_data @ self.weights
-        else:
-            if self.biases is not None:
-                z = input_data + self.biases
-            else:
-                z = input_data
-
-        # 활성화 함수 적용
-        output = z if self.activation is None else self.activation(z)
-
-        return output
 
 
 class NeuralNet(
@@ -235,17 +87,31 @@ class NeuralNet(
         auto_init_weights: bool = True,
         auto_init_biases: bool = True,
         weight_init_method: WeightInitMethod = None,
+        name: str = None,  # 레이어 이름 매개변수 추가
     ) -> Self:
-        """
-        신경망에 새 레이어를 추가합니다.
+        """신경망에 새 레이어를 추가합니다.
 
         Args:
             output_size: 레이어의 출력 크기(뉴런 수). weights가 제공된 경우 자동 계산됨
             init_weights: 직접 제공할 가중치 행렬. None이면 자동 초기화됨
             init_biases: 직접 제공할 바이어스 벡터. None이면 0으로 초기화됨
+            auto_init_weights: 가중치 자동 초기화 여부. False인 경우 초기화하지 않음
+            auto_init_biases: 바이어스 자동 초기화 여부. False인 경우 초기화하지 않음
+            weight_init_method: 가중치 초기화 방법. None인 경우 모델의 기본값 사용
+                - 'xavier'/'glorot': Xavier/Glorot 초기화 (시그모이드/tanh에 적합)
+                - 'he'/'kaiming': He/Kaiming 초기화 (ReLU 계열에 적합)
+                - 'normal': 표준 정규 분포 초기화
+                - 'uniform': 균등 분포 초기화
+                - 'zeros': 0으로 초기화
+            name: 레이어의 이름. None인 경우 기본 이름 사용
 
         Returns:
             자기 자신 (메서드 체이닝 지원)
+
+        Raises:
+            ValueError: 출력 크기, 가중치 또는 바이어스 중 어느 것도 제공되지 않은 경우
+            ValueError: 가중치 행렬의 형상이 이전 레이어 출력 크기와 일치하지 않는 경우
+            ValueError: 바이어스 벡터의 크기가 출력 크기와 일치하지 않는 경우
         """
         # 가중치가 제공된 경우 출력 크기 계산
         if init_weights is not None:
@@ -279,11 +145,17 @@ class NeuralNet(
                 if init_biases is None and auto_init_biases:
                     init_biases = np.zeros(output_size)
                 self.layers.append(
-                    Layer(new_layer_index, output_size, init_weights, init_biases)
+                    Layer(
+                        new_layer_index,
+                        output_size,
+                        name,
+                        init_weights,
+                        init_biases,
+                    )
                 )
             else:
                 # weights와 biases는 forward 메서드에서 '입력 데이터 크기'에 기반해 초기화됨
-                self.layers.append(Layer(new_layer_index, output_size))
+                self.layers.append(Layer(new_layer_index, output_size, name))
         else:
             prev_size = self.layers[-1].output_size
             if init_weights is None:
@@ -303,7 +175,9 @@ class NeuralNet(
             if init_biases is None and auto_init_biases:
                 init_biases = np.zeros(output_size)
 
-            new_layer = Layer(new_layer_index, output_size, init_weights, init_biases)
+            new_layer = Layer(
+                new_layer_index, output_size, name, init_weights, init_biases
+            )
 
             # NOTE:
             # 'forward'시에 자동으로 가중치와 편향을 초기화하지 못하게 해서
@@ -473,14 +347,17 @@ class NeuralNet(
             if layer.biases is not None:
                 total_bytes += layer.biases.nbytes
 
-            # 레이어 유형 결정 (마지막 레이어는 출력층, 나머지는 은닉층)
-            layer_type = "출력층" if i == len(self.layers) - 1 else f"은닉층 {i+1}"
+            # 레이어 이름 결정 (사용자 지정 이름이 있으면 사용, 없으면 기본 이름)
+            if layer.name:
+                layer_name = layer.name
+            else:
+                layer_name = "출력층" if i == len(self.layers) - 1 else f"은닉층 {i+1}"
 
             total_params += params
 
             layer_type_str = layer.get_type()
             print(
-                f"{layer_type:^10}{layer.output_size:^15}{params:^15}{layer_type_str:^30}"
+                f"{layer_name:^10}{layer.output_size:^15}{params:^15}{layer_type_str:^30}"
             )
 
         # 메모리 사용량 형식화에 공통 메서드 사용

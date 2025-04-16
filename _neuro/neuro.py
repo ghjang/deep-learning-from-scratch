@@ -18,11 +18,17 @@ class Neuro:
         output_size: int,
         init_weights: NDArray = None,
         init_biases: NDArray = None,
+        name: str = None,
     ) -> Self:
-        self.nn.layer(output_size, init_weights, init_biases)
+        self.nn.layer(
+            output_size,
+            init_weights,
+            init_biases,
+            name="affine" if name is None else name,
+        )
         return self
 
-    def linear(self, matrix: NDArray) -> Self:
+    def linear(self, matrix: NDArray, name: str = None) -> Self:
         if not self.nn.layers or len(self.nn.layers) == 0:
             raise ValueError("신경망에 레이어가 없습니다.")
 
@@ -37,11 +43,12 @@ class Neuro:
         self.nn.layer(
             init_weights=matrix,  # NOTE: 출력 크기는 'matrix.shape[1]'로 내부적으로 자동 설정됨.
             auto_init_biases=False,
+            name="linear" if name is None else name,
         )
 
         return self
 
-    def bias_add(self, bias: NDArray | float | int) -> Self:
+    def bias_add(self, bias: NDArray | float | int, name: str = None) -> Self:
         if not self.nn.layers or len(self.nn.layers) == 0:
             raise ValueError("신경망에 레이어가 없습니다.")
 
@@ -59,11 +66,12 @@ class Neuro:
             prev_output_size,
             init_biases=bias,
             auto_init_weights=False,
+            name="bias_add" if name is None else name,
         )
 
         return self
 
-    def sigmoid(self) -> Self:
+    def sigmoid(self, name: str = None) -> Self:
         if not self.nn.layers or len(self.nn.layers) == 0:
             raise ValueError("신경망에 레이어가 없습니다.")
 
@@ -73,6 +81,7 @@ class Neuro:
             prev_output_size,
             auto_init_weights=False,
             auto_init_biases=False,
+            name="sigmoid" if name is None else name,
         ).activation(sigmoid)
 
         return self
@@ -96,7 +105,7 @@ if __name__ == "__main__":
         Neuro.create()
         .affine(4)
         .sigmoid()
-        .affine(2)
+        .affine(2, name="affine_2")
         .sigmoid()
         .linear(np.array([[0.1, 0.2], [0.3, 0.4]]))
         .bias_add(np.array([5, 10]))
