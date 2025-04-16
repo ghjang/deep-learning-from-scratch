@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Self, override
+from typing import Self
 from numpy.typing import NDArray
 from neural_net import NeuralNet as NN
 from activation import ActivationFunction as AF, sigmoid

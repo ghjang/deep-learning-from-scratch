@@ -1,12 +1,17 @@
 import numpy as np
 import warnings
 from numpy.typing import NDArray
-from typing import Self
+from typing import Self, Literal, TypeAlias
 from activation import *
 from model_io import SaveLoadMixin
 from gradient import GradientMixin
 from loss import LossMixin
 from optimizer import OptimizerMixin
+
+# 초기화 방법을 위한 타입 별칭 정의
+WeightInitMethod: TypeAlias = Literal[
+    "xavier", "glorot", "he", "kaiming", "normal", "uniform", "zeros"
+]
 
 
 class Layer:
@@ -64,6 +69,96 @@ class Layer:
 
         return layer_type
 
+    @staticmethod
+    def initialize_weights(
+        input_size: int, output_size: int, method: WeightInitMethod = "xavier"
+    ) -> NDArray:
+        """가중치 초기화를 수행하는 정적 메서드
+
+        Args:
+            input_size: 입력 크기
+            output_size: 출력 크기
+            method: 초기화 방법 ('xavier'/'glorot', 'he'/'kaiming', 'normal', 'uniform', 'zeros')
+
+        Returns:
+            초기화된 가중치 행렬
+
+        Raises:
+            ValueError: 지원되지 않는 초기화 방법이 지정된 경우
+        """
+        if method == "xavier" or method == "glorot":
+            # Xavier/Glorot 초기화: 활성화 함수가 선형이거나 tanh일 때 효과적
+            weight_scale = np.sqrt(2.0 / (input_size + output_size))
+            return np.random.randn(input_size, output_size) * weight_scale
+
+        elif method == "he" or method == "kaiming":
+            # He/Kaiming 초기화: ReLU 계열 활성화 함수에 적합
+            weight_scale = np.sqrt(2.0 / input_size)
+            return np.random.randn(input_size, output_size) * weight_scale
+
+        elif method == "normal":
+            # 표준 정규 분포 초기화 (평균 0, 표준편차 0.01)
+            return np.random.randn(input_size, output_size) * 0.01
+
+        elif method == "uniform":
+            # 균등 분포 초기화 (-0.05 ~ 0.05)
+            return np.random.uniform(-0.05, 0.05, (input_size, output_size))
+
+        elif method == "zeros":
+            # 0으로 초기화
+            return np.zeros((input_size, output_size))
+
+        else:
+            raise ValueError(
+                f"지원되지 않는 초기화 방법: {method}. 'xavier', 'he', 'normal', 'uniform', 'zeros' 중 하나를 사용하세요."
+            )
+
+    def forward(
+        self,
+        input_data: NDArray,
+        auto_init_weights: bool = True,
+        auto_init_biases: bool = True,
+        weight_init_method: WeightInitMethod = "xavier",
+    ) -> NDArray:
+        """레이어의 순방향 계산을 수행합니다.
+
+        Args:
+            input_data: 입력 데이터. shape=(batch_size, input_features)
+            auto_init_weights: 가중치 자동 초기화 여부
+            auto_init_biases: 바이어스 자동 초기화 여부
+            weight_init_method: 가중치 초기화 방법
+
+        Returns:
+            레이어의 출력 데이터. shape=(batch_size, output_size)
+        """
+        # 가중치와 편향이 없으면 초기화
+        if self.weights is None and self.auto_init_weights and auto_init_weights:
+            prev_size = input_data.shape[1]
+            self.weights = Layer.initialize_weights(
+                prev_size, self.output_size, weight_init_method
+            )
+
+        if self.biases is None and self.auto_init_biases and auto_init_biases:
+            self.biases = np.zeros(self.output_size)
+
+        # 레이어 연산 적용
+        if self.weights is not None:
+            if self.biases is not None:
+                # 선형 계산: z = x @ W + b
+                z = input_data @ self.weights + self.biases
+            else:
+                z = input_data @ self.weights
+        else:
+            if self.biases is not None:
+                z = input_data + self.biases
+            else:
+                z = input_data
+
+        # 활성화 함수 적용
+        output = z if self.activation is None else self.activation(z)
+
+        return output
+
 
 class NeuralNet(
     SaveLoadMixin["NeuralNet"],
@@ -114,18 +209,23 @@ class NeuralNet(
         """새 신경망 모델 인스턴스를 생성합니다."""
         return NeuralNet()
 
-    def _initialize_weights(self, input_size: int, output_size: int) -> NDArray:
-        """Xavier/Glorot 초기화를 사용하여 가중치를 초기화합니다.
+    # 가중치 초기화 방법을 설정하기 위한 새로운 메서드
+    def weight_initializer(self, method: WeightInitMethod = "xavier") -> Self:
+        """가중치 초기화 방법을 설정합니다.
 
         Args:
-            input_size: 입력 크기
-            output_size: 출력 크기
+            method: 초기화 방법
+                - 'xavier'/'glorot': Xavier/Glorot 초기화 (시그모이드/tanh에 적합)
+                - 'he'/'kaiming': He/Kaiming 초기화 (ReLU 계열에 적합)
+                - 'normal': 표준 정규 분포 초기화
+                - 'uniform': 균등 분포 초기화
+                - 'zeros': 0으로 초기화
 
         Returns:
-            초기화된 가중치 행렬
+            자기 자신 (메서드 체이닝 지원)
         """
-        weight_scale = np.sqrt(2.0 / (input_size + output_size))
-        return np.random.randn(input_size, output_size) * weight_scale
+        self._weight_init_method = method
+        return self
 
     def layer(
         self,
@@ -134,6 +234,7 @@ class NeuralNet(
         init_biases: NDArray = None,
         auto_init_weights: bool = True,
         auto_init_biases: bool = True,
+        weight_init_method: WeightInitMethod = None,
     ) -> Self:
         """
         신경망에 새 레이어를 추가합니다.
@@ -187,8 +288,13 @@ class NeuralNet(
             prev_size = self.layers[-1].output_size
             if init_weights is None:
                 if auto_init_weights:
-                    # 가중치 초기화 헬퍼 메서드 활용
-                    init_weights = self._initialize_weights(prev_size, output_size)
+                    # 가중치 초기화 방법 선택
+                    method = weight_init_method or getattr(
+                        self, "_weight_init_method", "xavier"
+                    )
+                    init_weights = Layer.initialize_weights(
+                        prev_size, output_size, method
+                    )
             elif init_weights.shape[0] != prev_size:
                 raise ValueError(
                     f"제공된 가중치 행렬의 행 수({init_weights.shape[0]})가 이전 레이어의 출력 크기({prev_size})와 일치하지 않습니다."
@@ -233,7 +339,11 @@ class NeuralNet(
         return self
 
     def forward(
-        self, x: NDArray, auto_init_weights: bool = True, auto_init_biases: bool = True
+        self,
+        x: NDArray,
+        auto_init_weights: bool = True,
+        auto_init_biases: bool = True,
+        weight_init_method: WeightInitMethod = None,
     ) -> NDArray:
         """순방향 전파를 수행합니다.
 
@@ -257,31 +367,17 @@ class NeuralNet(
 
         layer_output = x  # NOTE: x 자체가 입력층
 
-        # 첫 번째 레이어(첫 번째 은닉층)부터 순방향 계산 수행
+        # 가중치 초기화 방법 선택
+        method = weight_init_method or getattr(self, "_weight_init_method", "xavier")
+
+        # 각 레이어를 순회하면서 순방향 계산 수행
         for idx, layer in enumerate(self.layers):
-            # 가중치와 편향이 없으면 초기화
-            if layer.weights is None and layer.auto_init_weights and auto_init_weights:
-                # NOTE: '1차원 배열' 입력만으로 가정함.
-                prev_size = layer_output.shape[1]
-                layer.weights = self._initialize_weights(prev_size, layer.output_size)
-
-            if layer.biases is None and layer.auto_init_biases and auto_init_biases:
-                layer.biases = np.zeros(layer.output_size)
-
-            if layer.weights is not None:
-                if layer.biases is not None:
-                    # 선형 계산: z = x @ W + b
-                    z = layer_output @ layer.weights + layer.biases
-                else:
-                    z = layer_output @ layer.weights
-            else:
-                if layer.biases is not None:
-                    z = layer_output + layer.biases
-                else:
-                    z = layer_output
-
-            # 활성화 함수 적용 (다음 레이어의 입력이 됨)
-            layer_output = z if layer.activation is None else layer.activation(z)
+            layer_output = layer.forward(
+                layer_output,
+                auto_init_weights,
+                auto_init_biases,
+                method,
+            )
 
             layer_type = layer.get_type()
             if layer_type == "passthrough":
@@ -289,7 +385,7 @@ class NeuralNet(
                     f"경고: 레이어 {idx + 1}는 '{layer_type}' 타입으로, 입력을 그대로 출력합니다."
                 )
 
-        # 최종 출력(다음 레이어의 입력) 반환
+        # 최종 출력 반환
         return layer_output
 
     def predict(self, x: NDArray) -> NDArray:
