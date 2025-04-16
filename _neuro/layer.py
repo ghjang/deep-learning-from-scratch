@@ -5,6 +5,9 @@ from typing import TypeAlias, Literal
 # Neuro 구현 모듈들
 from activation import ActivationFunction
 
+# 레이어 기본 타입을 위한 타입 별칭 정의
+LayerBaseType: TypeAlias = Literal["affine", "linear", "bias_add", "passthrough"]
+
 # 초기화 방법을 위한 타입 별칭 정의
 WeightInitMethod: TypeAlias = Literal[
     "xavier", "glorot", "he", "kaiming", "normal", "uniform", "zeros"
@@ -37,6 +40,25 @@ class Layer:
         self.auto_init_weights: bool = True
         self.auto_init_biases: bool = True
 
+    def get_base_type(self) -> LayerBaseType:
+        """
+        현재 레이어의 기본 타입을 설정된 속성에 따라 반환합니다.
+
+        Returns:
+            str: 레이어 기본 타입 문자열 (활성화 함수 정보 제외)
+        """
+        has_weights = self.weights is not None
+        has_biases = self.biases is not None
+
+        if has_weights and has_biases:
+            return "affine"  # 가중치와 바이어스를 모두 가진 레이어
+        elif has_weights:
+            return "linear"  # 가중치만 있는 레이어 (행렬 곱셈)
+        elif has_biases:
+            return "bias_add"  # 바이어스만 더하는 레이어
+        else:
+            return "passthrough"  # 아무 변환도 하지 않는 레이어
+
     def get_type(self) -> str:
         """
         현재 레이어의 타입을 설정된 속성에 따라 반환합니다.
@@ -44,18 +66,8 @@ class Layer:
         Returns:
             str: 레이어 타입 문자열
         """
-        has_weights = self.weights is not None
-        has_biases = self.biases is not None
+        layer_type = self.get_base_type()
         has_activation = self.activation is not None
-
-        if has_weights and has_biases:
-            layer_type = "affine"  # 가중치와 바이어스를 모두 가진 레이어
-        elif has_weights:
-            layer_type = "linear"  # 가중치만 있는 레이어 (행렬 곱셈)
-        elif has_biases:
-            layer_type = "bias_add"  # 바이어스만 더하는 레이어
-        else:
-            layer_type = "passthrough"  # 아무 변환도 하지 않는 레이어
 
         # 활성화 함수가 있으면 추가 정보 포함
         if has_activation:
@@ -141,21 +153,19 @@ class Layer:
         if self.biases is None and self.auto_init_biases and auto_init_biases:
             self.biases = np.zeros(self.output_size)
 
-        # 레이어 연산 적용
-        if self.weights is not None:
-            if self.biases is not None:
-                # affine
+        layer_base_type = self.get_base_type()
+
+        match layer_base_type:
+            case "affine":
                 z = input_data @ self.weights + self.biases
-            else:
-                # linear
+            case "linear":
                 z = input_data @ self.weights
-        else:
-            if self.biases is not None:
-                # bias_add
+            case "bias_add":
                 z = input_data + self.biases
-            else:
-                # passthrough
+            case "passthrough":
                 z = input_data
+            case _:
+                raise ValueError(f"지원되지 않는 레이어 타입: {layer_base_type}")
 
         # 활성화 함수 적용
         output = z if self.activation is None else self.activation(z)
