@@ -154,8 +154,14 @@ class NeuralNet(
                     )
                 )
             else:
+                # NOTE:
+                # 'auto_init_weights'와 'auto_init_biases' 에 따라서
                 # weights와 biases는 forward 메서드에서 '입력 데이터 크기'에 기반해 초기화됨
-                self.layers.append(Layer(new_layer_index, output_size, name))
+                new_layer = Layer(new_layer_index, output_size, name)
+                new_layer.auto_init_weights = auto_init_weights
+                new_layer.auto_init_biases = auto_init_biases
+                self.layers.append(new_layer)
+
         else:
             prev_size = self.layers[-1].output_size
             if init_weights is None:
@@ -323,50 +329,50 @@ class NeuralNet(
             {"name": "레이어", "width": 18},  # 짝수 너비
             {"name": "출력 크기", "width": 12},  # 짝수 너비
             {"name": "파라미터 수", "width": 16},  # 짝수 너비
-            {"name": "레이어 타입", "width": 30}  # 짝수 너비
+            {"name": "레이어 타입", "width": 30},  # 짝수 너비
         ]
-        
+
         # 테이블 너비 계산
         table_width = sum(col["width"] for col in columns) + len(columns) + 1
-        
+
         # 구분선
         separator = "+" + "-" * (table_width - 2) + "+"
-        
+
         # 시각적 너비 계산 함수
         def visual_width(text):
             """텍스트의 시각적 너비를 계산합니다 (한글: 2, 영문/숫자: 1)"""
             width = 0
             for char in text:
                 # 한글 유니코드 범위 (가-힣, ㄱ-ㅎ, ㅏ-ㅣ)
-                if ('\uAC00' <= char <= '\uD7A3') or ('\u3131' <= char <= '\u318E'):
+                if ("\uac00" <= char <= "\ud7a3") or ("\u3131" <= char <= "\u318e"):
                     width += 2
                 else:
                     width += 1
             return width
-        
+
         # 텍스트 포맷팅 도우미 함수
         def format_cell(text, width, shift=0):
             """셀 내용을 포맷팅합니다. 한글과 영문의 너비 차이를 고려합니다."""
             text = str(text)
-            
+
             # 시각적 너비 계산
             vis_width = visual_width(text)
-                        
+
             # 필요한 패딩 계산
             padding = width - vis_width
             if padding < 0:
                 padding = 0  # 너비 초과 시 최소한의 여백만 유지
-                
+
             # 좌우 패딩 균등 분배 (미세 조정값 적용)
             left_padding = padding // 2 + shift
             right_padding = padding - left_padding
-            
+
             # 패딩 값이 음수가 되지 않도록 보정
             left_padding = max(0, left_padding)
             right_padding = max(0, right_padding)
-            
+
             return " " * left_padding + text + " " * right_padding
-        
+
         # 행 생성 함수 - 그대로 유지
         def create_row(values):
             """테이블 행을 생성합니다."""
@@ -374,57 +380,64 @@ class NeuralNet(
             for i, value in enumerate(values):
                 width = columns[i]["width"]
                 # 헤더에 해당하는 한글 텍스트는 약간 오른쪽으로 이동하여 시각적 중앙 정렬 개선
-                shift = 1 if isinstance(value, str) and any('\uAC00' <= c <= '\uD7A3' for c in value) else 0
+                shift = (
+                    1
+                    if isinstance(value, str)
+                    and any("\uac00" <= c <= "\ud7a3" for c in value)
+                    else 0
+                )
                 result += format_cell(value, width, shift) + "|"
             return result
-                
+
         # 요약 정보 행 생성 함수 수정
         def create_summary_row(label, value):
             """들여쓰기와 테두리가 있는 요약 정보 행을 생성합니다. 콜론 위치를 통일합니다."""
             indent = 4  # 들여쓰기 공간
-            
+
             # 시각적 너비를 고려하여 정확한 패딩 계산
             label_vis_width = visual_width(label)
-            max_label_vis_width = visual_width("총 메모리 사용량")  # 기준이 되는 레이블의 시각적 너비
-            
+            max_label_vis_width = visual_width(
+                "총 메모리 사용량"
+            )  # 기준이 되는 레이블의 시각적 너비
+
             # 시각적 너비에 따른 패딩 계산
             padding_needed = max_label_vis_width - label_vis_width
             padded_label = label
             if padding_needed > 0:
                 padded_label += " " * padding_needed
-            
+
             # 콜론에 한 칸 더 띄워서 가독성 개선
             content = " " * indent + f"{padded_label} : {value}"
-            
+
             # 내용의 시각적 너비 계산
             content_vis_width = visual_width(content)
-            
+
             # 나머지 공간을 채울 패딩 계산
             padding = table_width - 2 - content_vis_width
             padding = max(0, padding)  # 음수가 되지 않도록
-            
+
             return "|" + content + " " * padding + "|"
-        
+
         # 테이블 출력 시작
         print("신경망 모델 요약:")
         print(separator)
-        
+
         # 헤더 행 - 열 제목을 약간 오른쪽으로 이동하여 시각적 중앙 정렬 개선
         header_values = [col["name"] for col in columns]
         print(create_row(header_values))
         print(separator)
-        
+
         # 카운터 초기화
         total_params = 0
         total_bytes = 0
-        
+
         # 입력층 표시
         if self.layers and self.layers[0].weights is not None:
             input_size = self.layers[0].weights.shape[0]
             print(create_row(["입력층", input_size, 0, "없음"]))
         else:
             print(create_row(["입력층", "알 수 없음", 0, "없음"]))
-        
+
         # 레이어 정보 표시
         for i, layer in enumerate(self.layers):
             # 파라미터 계산
@@ -432,32 +445,31 @@ class NeuralNet(
             bias_params = 0 if layer.biases is None else layer.biases.size
             params = weights_params + bias_params
             total_params += params
-            
+
             # 메모리 계산
             if layer.weights is not None:
                 total_bytes += layer.weights.nbytes
             if layer.biases is not None:
                 total_bytes += layer.biases.nbytes
-                
+
             # 레이어 이름
-            layer_name = layer.name if layer.name else ("출력층" if i == len(self.layers) - 1 else f"은닉층 {i+1}")
-            
+            layer_name = (
+                layer.name
+                if layer.name
+                else ("출력층" if i == len(self.layers) - 1 else f"은닉층 {i+1}")
+            )
+
             # 행 출력
-            print(create_row([
-                layer_name,
-                layer.output_size,
-                params,
-                layer.get_type()
-            ]))
-        
+            print(create_row([layer_name, layer.output_size, params, layer.get_type()]))
+
         # 테이블 종료 및 요약 정보
         print(separator)
-        
+
         # 요약 정보를 테이블 형식으로 표시 (들여쓰기 및 테두리 포함, 콜론 위치 통일)
         memory_size = self._format_memory_size(total_bytes)
         print(create_summary_row("총 파라미터 수", f"{total_params:,}"))
         print(create_summary_row("총 메모리 사용량", memory_size))
-        
+
         print(separator)
 
     def get_model_info(self) -> dict[str, tuple[int, str]]:

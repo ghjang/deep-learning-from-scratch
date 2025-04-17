@@ -4,6 +4,7 @@ from typing import TypeAlias, Literal
 
 # Neuro 구현 모듈들
 from activation import ActivationFunction
+from layer_backprop import LayerBackprop
 
 # 레이어 기본 타입을 위한 타입 별칭 정의
 LayerBaseType: TypeAlias = Literal["affine", "linear", "bias_add", "passthrough"]
@@ -40,13 +41,21 @@ class Layer:
         self.auto_init_weights: bool = True
         self.auto_init_biases: bool = True
 
+        self.backprop_impl: LayerBackprop | None = None
+
     def get_base_type(self) -> LayerBaseType:
         """
-        현재 레이어의 기본 타입을 설정된 속성에 따라 반환합니다.
+        현재 레이어의 상태를 기반으로 '기본 레이어 타입'을 반환합니다.
+
+        NOTE:
+        'weights' 또는 'biases'가 'forward' 메서드 호출시에 자동으로 초기화되게
+        레이어 생성시 설정한 경우에 'get_base_type' 메서드를 'forward' 메서드 호출 전에
+        호출하면 부정확한 레이어 타입을 반환할 수 있습니다.
 
         Returns:
             str: 레이어 기본 타입 문자열 (활성화 함수 정보 제외)
         """
+
         has_weights = self.weights is not None
         has_biases = self.biases is not None
 
@@ -125,6 +134,19 @@ class Layer:
                 f"지원되지 않는 초기화 방법: {method}. 'xavier', 'he', 'normal', 'uniform', 'zeros' 중 하나를 사용하세요."
             )
 
+    def forward_io_data(
+        self, layer_base_type: LayerBaseType, input_data: NDArray, output_data: NDArray
+    ) -> None:
+        if self.backprop_impl is not None:
+            if layer_base_type is "passthrough":
+                self.backprop_impl = LayerBackprop.create(self.activation)
+            else:
+                self.backprop_impl = LayerBackprop.create(layer_base_type)
+
+        self.backprop_impl.forward_layer_data(
+            self.weights, self.biases, input_data, output_data
+        )
+
     def forward(
         self,
         input_data: NDArray,
@@ -170,4 +192,16 @@ class Layer:
         # 활성화 함수 적용
         output = z if self.activation is None else self.activation(z)
 
+        self.forward_io_data(layer_base_type, input_data, output)
+
         return output
+
+    def backward(self, dout: NDArray) -> NDArray:
+        """역전파를 수행합니다.
+        Args:
+            dout: 상위 레이어에서 전달된 기울기. shape=(batch_size, output_size)
+        Returns:
+            현재 레이어의 기울기. shape=(batch_size, input_features)
+        """
+
+        return self.backprop_impl.backward(dout)
