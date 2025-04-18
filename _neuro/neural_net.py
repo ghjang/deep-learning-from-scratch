@@ -3,10 +3,12 @@ import warnings
 from numpy.typing import NDArray
 from typing import Self
 
+# 공통 타입 임포트
+from common_types import WeightInitMethod, ActivationFunction
+
 # NeuralNet 클래스에서 사용하는 믹스인들
 from model_io import SaveLoadMixin
-from layer import Layer, WeightInitMethod
-from activation import ActivationFunction
+from layer import Layer
 from gradient import GradientMixin
 from loss import LossMixin
 from optimizer import OptimizerMixin

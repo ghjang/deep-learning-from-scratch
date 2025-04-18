@@ -1,32 +1,33 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import override
+from typing import override, Callable
 from abc import ABC, abstractmethod
 
-from layer import LayerBaseType
-from activation import ActivationFunction as AF
+# 공통 타입 임포트
+from common_types import LayerBaseType, ActivationFunction as AF
 
 
 class LayerBackprop(ABC):
     @staticmethod
-    def create(layer_type: LayerBaseType | AF | None) -> "LayerBackprop":
-        match layer_type:
-            case str():  # LayerBaseType
-                return BaseLayerBackprop(layer_type)
+    def create(layer_type: LayerBaseType | Callable | None) -> "LayerBackprop":
+        # 문자열 타입인 경우 (LayerBaseType)
+        if isinstance(layer_type, str):
+            return BaseLayerBackprop(layer_type)
 
-            case AF():
-                # 활성화 함수 이름
-                af_name = layer_type.__name__
+        # 함수인 경우 (Callable),
+        elif callable(layer_type):
+            af_name = getattr(layer_type, "__name__", "")
 
-                if af_name == "sigmoid":
-                    return SigmoidLayerBackprop(layer_type)
+            if af_name == "sigmoid":
+                return SigmoidLayerBackprop(layer_type)
 
-                raise ValueError(
-                    "LayerBackprop.create() method does not accept activation function."
-                )
+            raise ValueError(
+                f"지원되지 않는 활성화 함수입니다: {af_name}. 현재는 'sigmoid'만 지원합니다."
+            )
 
-            case _:
-                return NullLayerBackprop()
+        # 기타 경우
+        else:
+            return NullLayerBackprop()
 
     @abstractmethod
     def forward_layer_data(

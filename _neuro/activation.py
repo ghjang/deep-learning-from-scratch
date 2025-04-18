@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import Callable
+
+# 공통 타입 임포트
+from common_types import ActivationFunction
 
 
 def identity(x: NDArray) -> NDArray:
@@ -74,7 +76,3 @@ def softmax(x: NDArray, axis: int | None = -1) -> NDArray:
     x_max = np.max(x, axis=axis, keepdims=True)
     e_x = np.exp(x - x_max)
     return e_x / np.sum(e_x, axis=axis, keepdims=True)
-
-
-# 활성화 함수 타입 정의 (Python 3.12 문법 사용)
-type ActivationFunction = Callable[[NDArray], NDArray]

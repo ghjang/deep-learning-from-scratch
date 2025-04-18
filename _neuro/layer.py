@@ -1,18 +1,11 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import TypeAlias, Literal
+
+# 공통 타입 임포트
+from common_types import LayerBaseType, WeightInitMethod, ActivationFunction
 
 # Neuro 구현 모듈들
-from activation import ActivationFunction
 from layer_backprop import LayerBackprop
-
-# 레이어 기본 타입을 위한 타입 별칭 정의
-LayerBaseType: TypeAlias = Literal["affine", "linear", "bias_add", "passthrough"]
-
-# 초기화 방법을 위한 타입 별칭 정의
-WeightInitMethod: TypeAlias = Literal[
-    "xavier", "glorot", "he", "kaiming", "normal", "uniform", "zeros"
-]
 
 
 class Layer:

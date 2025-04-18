@@ -1,11 +1,11 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import TypeVar, Generic, Any, Literal, Self, Callable, TypedDict
+from typing import TypeVar, Generic, Any, Self, Callable, TypedDict
+
+# 공통 타입 임포트
+from common_types import OptimizerType, GradientMethod
 
 T = TypeVar("T")
-
-# 최적화 알고리즘 타입 정의 (더 명확한 이름 사용)
-type OptimizerType = Literal["gradient_descent", "momentum", "rmsprop", "adam"]
 
 
 # 콜백 데이터 구조 정의
@@ -284,7 +284,7 @@ class OptimizerMixin(Generic[T]):
         return self
 
     def compute_loss_gradients(
-        self, x: NDArray, y: NDArray
+        self, x: NDArray, y: NDArray, method: GradientMethod = "numerical"
     ) -> dict[int, dict[str, NDArray]]:
         """
         네트워크의 모든 파라미터에 대한 손실 함수 그래디언트를 계산합니다.
@@ -295,16 +295,24 @@ class OptimizerMixin(Generic[T]):
         Args:
             x: 입력 데이터
             y: 정답 레이블
+            method: 그래디언트 계산 방법 ('numerical': 수치 미분, 'backpropagation': 역전파)
 
         Returns:
             각 레이어 파라미터에 대한 그래디언트 딕셔너리
         """
 
-        # 손실 함수를 목적 함수로 정의
-        def loss_objective(model_output: NDArray) -> float:
-            return self.compute_loss(model_output, y)
+        if method == "numerical":
+            # 손실 함수를 목적 함수로 정의
+            def loss_objective(model_output: NDArray) -> float:
+                return self.compute_loss(model_output, y)
 
-        return self.compute_model_gradients(x, loss_objective)
+            return self.compute_model_gradients(x, loss_objective)
+        elif method == "backpropagation":
+            pass
+        else:
+            raise ValueError(
+                f"지원하지 않는 그래디언트 계산 방법입니다: {method}. 'numerical' 또는 'backpropagation'을 사용하세요."
+            )
 
     def _update_params(self, gradients: dict[int, dict[str, NDArray]]) -> None:
         """
@@ -350,7 +358,7 @@ class OptimizerMixin(Generic[T]):
         # 최초 업데이트 전의 초기 신경망 상태를 전달
         if epoch == 0 and self._callbacks:
             callback_info: ProgressData = {
-                "epoch": 0, # '0'은 '학습 진행전'의 초기 신경망 상태를 의미
+                "epoch": 0,  # '0'은 '학습 진행전'의 초기 신경망 상태를 의미
                 "loss": 0,
                 "learning_rate": self._learning_rate,
                 "model_ref": self,
