@@ -15,9 +15,10 @@ class LayerBackprop(ABC):
                 return BaseLayerBackprop(layer_type)
 
             case AF():
+                # 활성화 함수 이름
                 af_name = layer_type.__name__
 
-                if af_name is "sigmoid":
+                if af_name == "sigmoid":
                     return SigmoidLayerBackprop(layer_type)
 
                 raise ValueError(
@@ -59,16 +60,22 @@ class NullLayerBackprop(LayerBackprop):
 
 
 class BaseLayerBackprop(LayerBackprop):
+    layer_type: LayerBaseType
+    weights: NDArray | None
+    biases: NDArray | None
+    input_data: NDArray | None
+    output_data: NDArray | None
+    dW: NDArray | None
+    db: NDArray | None
+
     def __init__(self, layer_type: LayerBaseType):
         self.layer_type = layer_type
-
-        self.weights: NDArray | None = None
-        self.biases: NDArray | None = None
-        self.input_data: NDArray | None = None
-        self.output_data: NDArray | None = None
-
-        self.dW: NDArray | None = None
-        self.db: NDArray | None = None
+        self.weights = None
+        self.biases = None
+        self.input_data = None
+        self.output_data = None
+        self.dW = None
+        self.db = None
 
     @override
     def forward_layer_data(
@@ -80,8 +87,8 @@ class BaseLayerBackprop(LayerBackprop):
     ) -> None:
         match self.layer_type:
             case "affine":
-                self.weights = weights
-                self.input_data = input_data
+                self.weights = weights  # 현재 레이어의 가중치
+                self.input_data = input_data  # 현재 레이어의 입력 데이터
 
             case "linear":
                 pass
@@ -120,9 +127,12 @@ class BaseLayerBackprop(LayerBackprop):
 
 
 class SigmoidLayerBackprop(LayerBackprop):
-    def __init__(self, layer_type: LayerBaseType):
+    layer_type: LayerBaseType | AF
+    output_data: NDArray | None
+
+    def __init__(self, layer_type: LayerBaseType | AF):
         self.layer_type = layer_type
-        self.output_data: NDArray | None = None
+        self.output_data = None
 
     @override
     def forward_layer_data(
@@ -132,6 +142,7 @@ class SigmoidLayerBackprop(LayerBackprop):
         input_data: NDArray,
         output_data: NDArray,
     ) -> None:
+        # 현재 레이어의 출력 데이터
         self.output_data = output_data
 
     @override

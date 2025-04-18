@@ -21,6 +21,16 @@ class Layer:
     딕셔너리 대신 실제 클래스를 사용하여 속성 접근이 더 안전하고 명확해집니다.
     """
 
+    layer_index: int
+    output_size: int
+    name: str | None
+    weights: NDArray | None
+    biases: NDArray | None
+    activation: ActivationFunction | None
+    auto_init_weights: bool
+    auto_init_biases: bool
+    backprop_impl: LayerBackprop | None
+
     def __init__(
         self,
         layer_index: int,
@@ -30,18 +40,18 @@ class Layer:
         biases: NDArray | None = None,
         activation: ActivationFunction | None = None,
     ):
-        self.layer_index: int = layer_index
-        self.output_size: int = output_size
-        self.name: str | None = name
+        self.layer_index = layer_index
+        self.output_size = output_size
+        self.name = name
 
-        self.weights: NDArray | None = weights
-        self.biases: NDArray | None = biases
-        self.activation: ActivationFunction | None = activation
+        self.weights = weights
+        self.biases = biases
+        self.activation = activation
 
-        self.auto_init_weights: bool = True
-        self.auto_init_biases: bool = True
+        self.auto_init_weights = True
+        self.auto_init_biases = True
 
-        self.backprop_impl: LayerBackprop | None = None
+        self.backprop_impl = None
 
     def get_base_type(self) -> LayerBaseType:
         """
@@ -137,8 +147,8 @@ class Layer:
     def forward_io_data(
         self, layer_base_type: LayerBaseType, input_data: NDArray, output_data: NDArray
     ) -> None:
-        if self.backprop_impl is not None:
-            if layer_base_type is "passthrough":
+        if self.backprop_impl is None:
+            if layer_base_type == "passthrough":
                 self.backprop_impl = LayerBackprop.create(self.activation)
             else:
                 self.backprop_impl = LayerBackprop.create(layer_base_type)
@@ -203,5 +213,8 @@ class Layer:
         Returns:
             현재 레이어의 기울기. shape=(batch_size, input_features)
         """
+
+        if self.backprop_impl is None:
+            raise ValueError("역전파를 수행하기 전에 순방향 전파가 선행되어야 합니다.")
 
         return self.backprop_impl.backward(dout)
