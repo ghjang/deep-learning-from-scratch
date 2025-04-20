@@ -4,7 +4,7 @@ from typing import override, Callable
 from abc import ABC, abstractmethod
 
 # 공통 타입 임포트
-from common_types import LayerBaseType, ActivationFunction as AF
+from common_types import LayerBaseType, ActivationFunction as AF, ParameterGradientDict
 
 
 class LayerBackprop(ABC):
@@ -41,7 +41,23 @@ class LayerBackprop(ABC):
 
     @abstractmethod
     def backward(self, dout: NDArray) -> NDArray:
+        """
+        역전파를 수행합니다.
+
+        Args:
+            dout: 상위 레이어에서 전달된 그래디언트
+
+        Returns:
+            현재 레이어의 입력에 대한 그래디언트
+        """
         pass
+
+    def get_gradients(self) -> ParameterGradientDict:
+        """
+        기본 구현에서는 빈 딕셔너리를 반환합니다.
+        서브클래스 레이어에서 필요시 오버라이드하여 레이어의 그래디언트를 반환하도록 구현할 수 있습니다.
+        """
+        return {}
 
 
 class NullLayerBackprop(LayerBackprop):
@@ -126,6 +142,18 @@ class BaseLayerBackprop(LayerBackprop):
             case _:
                 raise ValueError(f"지원되지 않는 레이어 타입: {self.layer_type}")
 
+    @override
+    def get_gradients(self) -> ParameterGradientDict:
+        gradients: ParameterGradientDict = {}
+
+        if self.dW is not None:
+            gradients["weights"] = self.dW
+
+        if self.db is not None:
+            gradients["biases"] = self.db
+
+        return gradients
+
 
 class SigmoidLayerBackprop(LayerBackprop):
     layer_type: LayerBaseType | AF
@@ -143,12 +171,23 @@ class SigmoidLayerBackprop(LayerBackprop):
         input_data: NDArray,
         output_data: NDArray,
     ) -> None:
-        # 현재 레이어의 출력 데이터
+        # 현재 레이어(Sigmoid 활성화 함수 레이어)의 출력 데이터
         self.output_data = output_data
 
     @override
     def backward(self, dout: NDArray) -> NDArray:
-        y = self.output_data
+        """
+        Sigmoid 활성화 함수의 역전파 계산을 수행합니다.
 
-        dx = dout * (y * (1 - y))
+        Args:
+            dout: 상위 레이어에서 전달된 그래디언트
+
+        Returns:
+            현재 레이어의 입력에 대한 그래디언트
+        """
+
+        # Sigmoid 활성화 함수 레이어의 출력 값
+        s = self.output_data
+
+        dx = dout * (s * (1 - s))
         return dx

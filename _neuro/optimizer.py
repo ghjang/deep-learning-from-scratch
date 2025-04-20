@@ -3,7 +3,7 @@ from numpy.typing import NDArray
 from typing import TypeVar, Generic, Any, Self, Callable, TypedDict
 
 # 공통 타입 임포트
-from common_types import OptimizerType, GradientMethod
+from common_types import OptimizerType, GradientMethod, LayerGradientDict
 
 T = TypeVar("T")
 
@@ -283,9 +283,13 @@ class OptimizerMixin(Generic[T]):
         self._callbacks.append(callback_fn)
         return self
 
-    def compute_loss_gradients(
-        self, x: NDArray, y: NDArray, method: GradientMethod = "numerical"
-    ) -> dict[int, dict[str, NDArray]]:
+    def _compute_loss_gradients(
+        self,
+        x: NDArray,
+        y: NDArray,
+        y_pred: NDArray,
+        method: GradientMethod = "backpropagation",
+    ) -> LayerGradientDict:
         """
         네트워크의 모든 파라미터에 대한 손실 함수 그래디언트를 계산합니다.
 
@@ -295,6 +299,7 @@ class OptimizerMixin(Generic[T]):
         Args:
             x: 입력 데이터
             y: 정답 레이블
+            y_pred: 모델의 예측값 (순전파 결과)
             method: 그래디언트 계산 방법 ('numerical': 수치 미분, 'backpropagation': 역전파)
 
         Returns:
@@ -306,15 +311,17 @@ class OptimizerMixin(Generic[T]):
             def loss_objective(model_output: NDArray) -> float:
                 return self.compute_loss(model_output, y)
 
-            return self.compute_model_gradients(x, loss_objective)
+            return self.compute_model_gradients(
+                x=x, objective_fn=loss_objective, method=method
+            )
         elif method == "backpropagation":
-            pass
+            return self.compute_model_gradients(y=y, model_output=y_pred, method=method)
         else:
             raise ValueError(
                 f"지원하지 않는 그래디언트 계산 방법입니다: {method}. 'numerical' 또는 'backpropagation'을 사용하세요."
             )
 
-    def _update_params(self, gradients: dict[int, dict[str, NDArray]]) -> None:
+    def _update_params(self, gradients: LayerGradientDict) -> None:
         """
         계산된 그래디언트를 사용하여 네트워크 파라미터를 업데이트합니다.
 
@@ -325,7 +332,7 @@ class OptimizerMixin(Generic[T]):
         self._update_gradient_descent(gradients, self._learning_rate)
 
     def _update_gradient_descent(
-        self, gradients: dict[int, dict[str, NDArray]], learning_rate: float
+        self, gradients: LayerGradientDict, learning_rate: float
     ) -> None:
         """경사하강법 알고리즘으로 파라미터 업데이트"""
         for layer_idx, layer_grads in gradients.items():
@@ -339,7 +346,13 @@ class OptimizerMixin(Generic[T]):
             if "biases" in layer_grads and layer.biases is not None:
                 layer.biases -= learning_rate * layer_grads["biases"]
 
-    def _train_step(self, epoch: int, x: NDArray, y: NDArray) -> float:
+    def _train_step(
+        self,
+        epoch: int,
+        x: NDArray,
+        y: NDArray,
+        method: GradientMethod = "backpropagation",
+    ) -> float:
         """
         단일 학습 단계를 수행합니다.
 
@@ -367,11 +380,11 @@ class OptimizerMixin(Generic[T]):
             for callback_fn in self._callbacks:
                 callback_fn(callback_info)
 
-        # 손실 계산 - LossMixin의 _loss_type 사용
+        # 손실 계산
         loss = self.compute_loss(y_pred, y)
 
-        # 그래디언트 계산 - compute_loss_gradients 사용
-        gradients = self.compute_loss_gradients(x, y)
+        # 그래디언트 계산
+        gradients = self._compute_loss_gradients(x, y, y_pred, method=method)
 
         # 파라미터 업데이트
         self._update_params(gradients)
@@ -382,9 +395,16 @@ class OptimizerMixin(Generic[T]):
         self,
         x: NDArray,
         y: NDArray,
+        method: GradientMethod = "numerical",
     ) -> list[float]:
         """
         모델을 훈련합니다. 배치 크기에 따른 경사 하강법을 사용합니다.
+
+        NOTE:
+        NeuralNet 클래스에서 직접 레이어를 구성할 경우,
+        활성 함수가 별도의 레이어로 분리되지 않기 때문에
+        역전파(backpropagation) 방식으로 그래디언트를 계산할 수 없습니다.
+        이 경우 기본 'method'인 'numerical'을 사용해야 합니다.
 
         Args:
             x: 전체 훈련 데이터 입력값. 형태: (샘플 수, 특성 수)
@@ -423,7 +443,7 @@ class OptimizerMixin(Generic[T]):
                 y_batch = y_shuffled[i : i + self._batch_size]
 
                 # 단일 배치에 대한 훈련 단계 수행
-                batch_loss = self._train_step(epoch, x_batch, y_batch)
+                batch_loss = self._train_step(epoch, x_batch, y_batch, method=method)
                 epoch_loss += batch_loss * len(x_batch) / n_samples
 
             history.append(epoch_loss)

@@ -2,9 +2,10 @@ import numpy as np
 from numpy.typing import NDArray
 from typing import TypeVar, Generic, Literal, Self
 
+from layer_loss import LossLayer, MSELoss, CrossEntropyLoss
+
 T = TypeVar("T")
 
-# 손실 함수 타입을 위한 타입 앨리어스 정의
 type LossType = Literal["mse", "cross_entropy"]
 
 
@@ -45,7 +46,7 @@ class LossMixin(Generic[T]):
     def __init__(self) -> None:
         """LossMixin 초기화"""
         super().__init__()
-        self._loss_type: LossType = "mse"  # 기본 손실 함수 유형
+        self._loss_layer: LossLayer | None = None
 
     def loss(self, loss_type: LossType) -> Self:
         """
@@ -57,8 +58,35 @@ class LossMixin(Generic[T]):
         Returns:
             자기 자신 (메서드 체이닝 지원)
         """
-        self._loss_type = loss_type
+        # 손실 함수 타입에 따라 적절한 LossLayer 객체 생성
+        if loss_type == "mse":
+            self._loss_layer = MSELoss()
+        elif loss_type == "cross_entropy":
+            self._loss_layer = CrossEntropyLoss()
+        else:
+            raise ValueError(f"지원하지 않는 손실 함수 유형: {loss_type}")
+
         return self
+
+    @property
+    def loss_layer(self) -> LossLayer | None:
+        """
+        현재 설정된 손실 레이어 객체를 반환합니다.
+        
+        이 프로퍼티를 통해 현재 모델이 사용 중인 손실 함수 레이어에 직접 접근할 수 있습니다.
+        레이어 객체에 접근하여 특정 속성을 설정하거나 상태를 확인할 수 있습니다.
+        
+        예시:
+        ```python
+        # CrossEntropyLoss 객체의 axis 속성 변경
+        if isinstance(model.loss_layer, CrossEntropyLoss):
+            model.loss_layer.axis = 1
+        ```
+        
+        Returns:
+            설정된 손실 레이어 객체. 설정되지 않은 경우 None
+        """
+        return self._loss_layer
 
     def compute_loss(
         self,
@@ -74,38 +102,38 @@ class LossMixin(Generic[T]):
             y_pred: 모델의 예측값
             y_true: 실제 정답값
             loss_type: 손실 함수 유형 ('mse' 또는 'cross_entropy')
-                      None이면 사전 설정된 self._loss_type 사용
+                      None이면 사전 설정된 손실 레이어 사용
             axis: 분류 문제에서 클래스 차원의 축 (기본값: -1, 마지막 차원)
                 - 일반적인 (batch_size, classes) 형태의 데이터에서는 axis=1
                 - 다차원 출력의 경우 클래스가 있는 차원을 지정
 
         Returns:
             계산된 손실값
+
+        Raises:
+            RuntimeError: 손실 레이어가 설정되지 않은 경우
         """
-        # loss_type이 지정되지 않은 경우 인스턴스 변수 _loss_type 사용
-        current_loss_type = self._loss_type if loss_type is None else loss_type
-
-        if current_loss_type == "mse":
-            # 평균 제곱 오차 (Mean Squared Error)
-            return np.mean((y_pred - y_true) ** 2)
-
-        elif current_loss_type == "cross_entropy":
-            # Cross Entropy Loss (분류 문제에 적합)
-            # 수치 안정성을 위해 epsilon 추가
-            eps = 1e-10
-            # 확률값의 범위를 [eps, 1-eps]로 클리핑
-            y_pred_clipped = np.clip(y_pred, eps, 1 - eps)
-            # Cross Entropy 계산
-            if y_true.ndim == 1 or y_true.shape[1] == 1:
-                # 이진 분류인 경우
-                return -np.mean(
-                    y_true * np.log(y_pred_clipped)
-                    + (1 - y_true) * np.log(1 - y_pred_clipped)
-                )
+        # loss_type이 지정된 경우 임시 LossLayer 객체 생성
+        if loss_type is not None:
+            if loss_type == "mse":
+                temp_layer = MSELoss()
+                return temp_layer.forward(y_pred, y_true)
+            elif loss_type == "cross_entropy":
+                temp_layer = CrossEntropyLoss(axis=axis)
+                return temp_layer.forward(y_pred, y_true)
             else:
-                # 다중 클래스 분류인 경우
-                # axis 매개변수를 사용하여 클래스 차원을 지정
-                return -np.mean(np.sum(y_true * np.log(y_pred_clipped), axis=axis))
+                raise ValueError(f"지원하지 않는 손실 함수 유형: {loss_type}")
 
-        else:
-            raise ValueError(f"지원하지 않는 손실 함수 유형: {loss_type}")
+        # 기본 손실 레이어 사용
+        if self._loss_layer is None:
+            raise RuntimeError(
+                "손실 함수가 설정되지 않았습니다. loss() 메서드를 먼저 호출하세요."
+            )
+
+        # CrossEntropyLoss인 경우 axis 설정
+        if isinstance(self._loss_layer, CrossEntropyLoss):
+            # 현재 요청된 축과 설정된 축이 다른 경우에만 변경
+            if self._loss_layer.axis != axis:
+                self._loss_layer.axis = axis
+
+        return self._loss_layer.forward(y_pred, y_true)

@@ -2,7 +2,12 @@ import numpy as np
 from numpy.typing import NDArray
 
 # 공통 타입 임포트
-from common_types import LayerBaseType, WeightInitMethod, ActivationFunction
+from common_types import (
+    LayerBaseType,
+    WeightInitMethod,
+    ActivationFunction,
+    ParameterGradientDict,
+)
 
 # Neuro 구현 모듈들
 from layer_backprop import LayerBackprop
@@ -85,13 +90,24 @@ class Layer:
         if has_activation:
             activation_name = self.activation.__name__
             if layer_type == "passthrough":
-                layer_type = f"activation_{activation_name}"  # 활성화만 있는 경우
+                layer_type = f"passthrough_{activation_name}"  # 활성화만 있는 경우
             else:
                 layer_type = (
                     f"{layer_type}_with_{activation_name}"  # 다른 연산 + 활성화
                 )
 
         return layer_type
+
+    def get_backprop_gradients(self) -> ParameterGradientDict:
+        """backpropagation으로 계산된 현재 레이어의 파라미터에 대한 그래디언트를 반환합니다.
+
+        Returns:
+            ParameterGradientDict: 레이어 파라미터에 대한 그래디언트 딕셔너리
+        """
+        if self.backprop_impl is None:
+            raise ValueError("역전파 구현이 초기화되지 않았습니다.")
+
+        return self.backprop_impl.get_gradients()
 
     @staticmethod
     def initialize_weights(
@@ -201,13 +217,19 @@ class Layer:
 
     def backward(self, dout: NDArray) -> NDArray:
         """역전파를 수행합니다.
+
+        일반 레이어의 역전파는 상위 레이어로부터 전달받은 그래디언트와
+        순전파 시 저장한 내부 캐싱 데이터만 사용합니다.
+
         Args:
             dout: 상위 레이어에서 전달된 기울기. shape=(batch_size, output_size)
+
         Returns:
-            현재 레이어의 기울기. shape=(batch_size, input_features)
+            현재 레이어의 입력에 대한 기울기. shape=(batch_size, input_features)
         """
 
         if self.backprop_impl is None:
             raise ValueError("역전파를 수행하기 전에 순방향 전파가 선행되어야 합니다.")
 
+        # NOTE: y 파라미터 없이 호출
         return self.backprop_impl.backward(dout)

@@ -1,11 +1,16 @@
 import numpy as np
 from numpy.typing import NDArray
-from typing import TypeVar, Generic, Callable, Literal
+from typing import TypeVar, Generic, Callable
+
+# 공통 타입 임포트
+from common_types import (
+    NeuralParamType,
+    LayerGradientDict,
+    ParameterGradientDict,
+    GradientMethod,
+)
 
 T = TypeVar("T")
-
-# 파라미터 타입 정의
-ParamType = Literal["weights", "biases"]
 
 
 class GradientMixin(Generic[T]):
@@ -85,7 +90,7 @@ class GradientMixin(Generic[T]):
     def _compute_param_gradient(
         self,
         layer_idx: int,
-        param_type: ParamType,
+        param_type: NeuralParamType,
         x: NDArray,
         objective_fn: Callable[[NDArray], float],
     ) -> NDArray:
@@ -123,8 +128,13 @@ class GradientMixin(Generic[T]):
         return self.compute_function_gradients(obj_param, param)
 
     def compute_model_gradients(
-        self, x: NDArray, objective_fn: Callable[[NDArray], float]
-    ) -> dict[int, dict[str, NDArray]]:
+        self,
+        x: NDArray | None = None,
+        y: NDArray | None = None,
+        model_output: NDArray | None = None,
+        objective_fn: Callable[[NDArray], float] | None = None,
+        method: GradientMethod = "numerical",
+    ) -> LayerGradientDict:
         """
         네트워크의 모든 파라미터에 대한 임의의 목적 함수의 그래디언트를 계산합니다.
 
@@ -132,14 +142,46 @@ class GradientMixin(Generic[T]):
         특정 손실 함수에 대한 그래디언트는 OptimizerMixin에서 처리합니다.
 
         Args:
-            x: 입력 데이터
-            objective_fn: 모델 출력을 입력으로 받아 스칼라 값을 반환하는 목적 함수
+            x: 입력 데이터 (수치 미분 방식에서 필수)
+            y: 타겟 데이터 (역전파 방식에서 필수)
+                수치 미분 방식에서는 일반적으로 objective_fn 내부에서 클로저로
+                캡처되므로 직접 전달하지 않아도 됩니다.
+            model_output: 모델의 출력값 (역전파 방식에서 필수)
+                이미 계산된 모델 출력을 제공하여 중복 계산을 방지합니다.
+            objective_fn: 모델 출력을 입력으로 받아 스칼라 값을 반환하는 목적 함수 (수치 미분에서 필수)
+                일반적으로 lambda output: compute_loss(output, y_target) 형태의
+                클로저로 제공되며, 내부에서 y 값을 참조합니다.
+            method: 그래디언트 계산 방법 ('numerical': 수치 미분, 'backpropagation': 역전파)
+
+        참고:
+            수치 미분 방식과 역전파 방식은 서로 다른 입력 매개변수를 요구합니다:
+            - 수치 미분(numerical): x와 objective_fn 매개변수가 필요합니다.
+              objective_fn은 보통 내부에서 y 값을 참조하는 클로저입니다.
+              예시: lambda output: compute_loss(output, y_target)
+            - 역전파(backpropagation): y와 model_output 매개변수가 필요합니다.
 
         Returns:
-            각 레이어 파라미터에 대한 그래디언트 딕셔너리
+            각 레이어 파라미터에 대한 그래디언트 딕셔너리 (LayerGradientDict)
         """
+        if method == "numerical" and x is not None and objective_fn is not None:
+            # 수치 미분 방식: x 값과 objective_fn 함수가 필요함 (일반적으로 내부에서 y 값을 참조하는 클로저)
+            return self._compute_numerical_gradients(x=x, objective_fn=objective_fn)
+        elif method == "backpropagation" and y is not None and model_output is not None:
+            # 역전파 방식: y 값과 model_output이 필요함
+            return self._compute_backprop_gradients(model_output=model_output, y=y)
+        else:
+            raise ValueError(
+                "올바른 그래디언트 계산 방법과 필요한 파라미터를 지정해야 합니다.\n"
+                "- 'numerical' 방법에는 'objective_fn'이 필요합니다. (이 함수는 보통 내부적으로 y 값 참조)\n"
+                "- 'backpropagation' 방법에는 'y'와 'model_output'이 직접 필요합니다."
+            )
+
+    def _compute_numerical_gradients(
+        self, x: NDArray, objective_fn: Callable[[NDArray], float]
+    ) -> LayerGradientDict:
+        """수치 미분 방식으로 그래디언트를 계산합니다."""
         model = self
-        gradients: dict[int, dict[str, NDArray]] = {}
+        gradients: LayerGradientDict = {}
 
         # 각 레이어의 파라미터에 대한 그래디언트 계산
         for i in range(len(model.layers)):
@@ -156,3 +198,31 @@ class GradientMixin(Generic[T]):
                 gradients[i]["biases"] = grad_biases
 
         return gradients
+
+    def _compute_backprop_gradients(
+        self, model_output: NDArray, y: NDArray
+    ) -> LayerGradientDict:
+        """역전파 방식으로 그래디언트를 계산합니다."""
+        model = self
+        gradients: LayerGradientDict = {}
+
+        # NOTE:
+        # 역전파 방식에서는 '손실 레이어'는 '기본 레이어'와는 별도로 처리함.
+        dout = 1
+        dout = model.loss_layer.backward(model_output, y, dout)
+
+        # 역순으로 '기본 레이어' 순회
+        for i in reversed(range(len(model.layers))):
+            gradients[i] = {}
+            layer = model.layers[i]
+            dout = layer.backward(dout)
+
+            parameter_gradients = layer.get_backprop_gradients()
+            gradients[i] = parameter_gradients
+
+        # 정렬된 그래디언트 딕셔너리 생성
+        sorted_gradients: LayerGradientDict = {}
+        for layer_idx in sorted(gradients.keys()):
+            sorted_gradients[layer_idx] = gradients[layer_idx]
+
+        return sorted_gradients
