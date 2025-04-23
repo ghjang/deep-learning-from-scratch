@@ -7,6 +7,77 @@ from neural_net import NeuralNet as NN
 from neuro import Neuro
 
 
+def compare_gradients(
+    numerical_gradients, backprop_gradients, error_threshold=0.005, print_details=True
+):
+    """
+    수치미분과 오차역전파를 통해 계산된 그래디언트를 비교하는 함수
+
+    Args:
+        numerical_gradients: 수치미분으로 계산된 그래디언트 딕셔너리
+        backprop_gradients: 오차역전파로 계산된 그래디언트 딕셔너리
+        error_threshold: 상대 오차 허용 임계값 (기본값: 0.005 또는 0.5%)
+        print_details: 비교 세부 정보 출력 여부
+
+    Returns:
+        True if gradients match within threshold, otherwise raises AssertionError
+    """
+    # 1. 그래디언트 레이어 수 비교 (빈 딕셔너리 제외)
+    numerical_valid_layers = {i for i, grads in numerical_gradients.items() if grads}
+    backprop_valid_layers = {i for i, grads in backprop_gradients.items() if grads}
+
+    # 두 그래디언트의 유효 레이어 인덱스 집합이 동일해야 함
+    assert numerical_valid_layers == backprop_valid_layers, (
+        f"그래디언트 레이어 인덱스 집합이 일치하지 않습니다.\n"
+        f"수치미분: {numerical_valid_layers}, 오차역전파: {backprop_valid_layers}"
+    )
+
+    # 2. 각 레이어별 파라미터 키 집합 비교
+    for layer_idx in numerical_valid_layers:
+        num_param_keys = set(numerical_gradients[layer_idx].keys())
+        bp_param_keys = set(backprop_gradients[layer_idx].keys())
+
+        # 동일한 레이어 인덱스에서 파라미터 키 집합이 동일해야 함
+        assert num_param_keys == bp_param_keys, (
+            f"레이어 {layer_idx}의 파라미터 키 집합이 일치하지 않습니다.\n"
+            f"수치미분: {num_param_keys}, 오차역전파: {bp_param_keys}"
+        )
+
+        # 3. 파라미터별 값 비교
+        for param_name in num_param_keys:
+            num_value = numerical_gradients[layer_idx][param_name]
+            bp_value = backprop_gradients[layer_idx][param_name]
+
+            # 방향(부호) 비교
+            sign_match = np.all(np.sign(num_value) == np.sign(bp_value))
+            assert (
+                sign_match
+            ), f"레이어 {layer_idx}의 파라미터 {param_name}의 그래디언트 방향이 일치하지 않습니다"
+
+            # 값의 크기 비교 (상대 오차 계산)
+            epsilon = 1e-10  # 0으로 나누기 방지
+            relative_error = np.max(
+                np.abs(bp_value - num_value)
+                / np.maximum(np.maximum(np.abs(num_value), np.abs(bp_value)), epsilon)
+            )
+
+            if print_details:
+                print(f"\n{param_name} 그래디언트 비교 (레이어 {layer_idx}):")
+                print(f"  수치미분: {num_value}")
+                print(f"  오차역전파: {bp_value}")
+                print(
+                    f"  상대 오차: {relative_error:.4f} (임계값: {error_threshold:.4f})"
+                )
+
+            # 상대 오차가 임계값 이하인지 확인
+            assert relative_error <= error_threshold, (
+                f"레이어 {layer_idx}의 {param_name} 그래디언트의 상대 오차({relative_error:.4f})가 "
+                f"임계값({error_threshold:.4f})을 초과합니다"
+            )
+
+    return True
+
+
 class TestNeuralNet(unittest.TestCase):
     def test_simple_forward(self):
         # 입력값
@@ -193,71 +264,10 @@ class NeuroTest(unittest.TestCase):
         print("Numerical Gradients:\n", numerical_gradients)
         print("Backpropagation Gradients:\n", backprop_gradients)
 
-        # 1. 그래디언트 레이어 수 비교 (빈 딕셔너리 제외)
-        numerical_valid_layers = {
-            i for i, grads in numerical_gradients.items() if grads
-        }
-        backprop_valid_layers = {i for i, grads in backprop_gradients.items() if grads}
+        # 추출한 함수를 사용하여 그래디언트 비교
 
-        # 두 그래디언트의 유효 레이어 인덱스 집합이 동일해야 함
-        self.assertEqual(
-            numerical_valid_layers,
-            backprop_valid_layers,
-            f"그래디언트 레이어 인덱스 집합이 일치하지 않습니다.\n"
-            f"수치미분: {numerical_valid_layers}, 오차역전파: {backprop_valid_layers}",
-        )
-
-        # 2. 각 레이어별 파라미터 키 집합 비교
-        for layer_idx in numerical_valid_layers:
-            num_param_keys = set(numerical_gradients[layer_idx].keys())
-            bp_param_keys = set(backprop_gradients[layer_idx].keys())
-
-            # 동일한 레이어 인덱스에서 파라미터 키 집합이 동일해야 함
-            self.assertEqual(
-                num_param_keys,
-                bp_param_keys,
-                f"레이어 {layer_idx}의 파라미터 키 집합이 일치하지 않습니다.\n"
-                f"수치미분: {num_param_keys}, 오차역전파: {bp_param_keys}",
-            )
-
-            # 3. 파라미터별 값 비교
-            for param_name in num_param_keys:
-                num_value = numerical_gradients[layer_idx][param_name]
-                bp_value = backprop_gradients[layer_idx][param_name]
-
-                # 방향(부호) 비교
-                sign_match = np.all(np.sign(num_value) == np.sign(bp_value))
-                self.assertTrue(
-                    sign_match,
-                    f"레이어 {layer_idx}의 파라미터 {param_name}의 그래디언트 방향이 일치하지 않습니다",
-                )
-
-                # 값의 크기 비교 (상대 오차 계산)
-                epsilon = 1e-10  # 0으로 나누기 방지
-                relative_error = np.max(
-                    np.abs(bp_value - num_value)
-                    / np.maximum(
-                        np.maximum(np.abs(num_value), np.abs(bp_value)), epsilon
-                    )
-                )
-
-                # 상대 오차 허용 임계값 (50%)
-                error_threshold = 0.5
-
-                print(f"\n{param_name} 그래디언트 비교 (레이어 {layer_idx}):")
-                print(f"  수치미분: {num_value}")
-                print(f"  오차역전파: {bp_value}")
-                print(
-                    f"  상대 오차: {relative_error:.4f} (임계값: {error_threshold:.2f})"
-                )
-
-                # 상대 오차가 임계값 이하인지 확인
-                self.assertLessEqual(
-                    relative_error,
-                    error_threshold,
-                    f"레이어 {layer_idx}의 {param_name} 그래디언트의 상대 오차({relative_error:.4f})가 "
-                    f"임계값({error_threshold:.2f})을 초과합니다",
-                )
+        # 두 계산방식의 그래디언트 비교
+        compare_gradients(numerical_gradients, backprop_gradients)
 
         # 모델 구조 요약 출력
         print("\n[모델 구조]")
