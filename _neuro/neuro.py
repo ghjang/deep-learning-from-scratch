@@ -150,8 +150,12 @@ class Neuro:
             # 모델 파라미터들을 초기화하기 위해서 forward 더미 호출 필요함.
             self.forward(x)
 
-            # 손실 함수를 목적 함수로 정의
+            # '손실 함수'를 '최적화 목적 함수'로 사용함.
             def loss_objective(model_output: NDArray) -> float:
+                """
+                Arguments:
+                    model_output: 모델의 예측값(각 forward 결과)
+                """
                 return self.nn.compute_loss(model_output, y)
 
             # 수치 미분 방식으로 그래디언트 계산
