@@ -323,6 +323,60 @@ class NeuroTest(unittest.TestCase):
         model.summary()
         print("\n")
 
+    def test_neuro_xor_gate_learning(self):
+        """
+        Neuro API를 사용한 XOR 게이트 학습 테스트
+
+        XOR 게이트는 비선형 분리가 필요하므로 히든 레이어가 필요하다.
+        """
+        # fmt: off
+        
+        # 입력값
+        x = np.array([
+            [0, 0],
+            [0, 1],
+            [1, 0],
+            [1, 1]
+        ])
+
+        # XOR 게이트 기대 출력값
+        y = np.array([
+            [0],
+            [1],
+            [1],
+            [0]
+        ])
+
+        # 모델 생성 (Neuro API 사용)
+        # XOR 문제는 은닉층이 필요하므로 2층 구조로 설계
+        model = Neuro.create()\
+                    .affine(2)\
+                    .sigmoid()\
+                    .affine(1)\
+                    .sigmoid()
+
+        # 모델 학습
+        model.verbose(True, interval=1000)\
+                .batch_size(x.shape[0])\
+                .epochs(10000)\
+                .learning_rate(0.25)\
+                .loss("mse")\
+                .optimizer("gradient_descent")\
+                .fit(x, y)
+
+        # fmt: on
+
+        # 훈련 데이터에 대한 예측값
+        predictions = model.predict(x)
+        print("\nNeuro API XOR 게이트 예측 결과:\n", predictions)
+
+        # 훈련 데이터에 대한 예측값과 실제값 비교
+        self.assertTrue(np.allclose(predictions, y, atol=0.1))
+
+        # 모델 구조 요약 출력
+        print("\n[XOR 게이트 - Neuro API 모델 구조]")
+        model.summary()
+
 
 if __name__ == "__main__":
     unittest.main()
